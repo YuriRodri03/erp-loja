@@ -109,14 +109,14 @@ export default function Estoque() {
   const totalItens = produtos.length;
 
   return (
-    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8 w-full overflow-hidden">
       
       {alerta.visivel && (
         <AlertaFlutuante mensagem={alerta.mensagem} tipo={alerta.tipo} onClose={fecharAlerta} />
       )}
 
       {/* HEADER PAGE */}
-      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-5 sm:gap-6">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-5 sm:gap-6 w-full">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Gestão de Estoque</h2>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Controle de inventário da {nomeLoja}</p>
@@ -151,25 +151,25 @@ export default function Estoque() {
 
       {/* FORMULÁRIO ESCONDIDO */}
       {mostrarFormulario && (
-        <form onSubmit={handleSubmit} className="bg-white p-5 sm:p-8 rounded-2xl border border-blue-100 shadow-lg shadow-blue-50 animate-fade-in-down">
+        <form onSubmit={handleSubmit} className="bg-white p-5 sm:p-8 rounded-2xl border border-blue-100 shadow-lg shadow-blue-50 animate-fade-in-down w-full overflow-hidden">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-5 sm:mb-6 pb-3 border-b border-gray-100">
             {editandoId ? '✏️ Editando Produto' : '📦 Adicionar Novo Produto'}
           </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
             <div className="flex flex-col lg:col-span-2">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Nome do Produto <span className="text-red-500">*</span></label>
-              <input type="text" name="nome" value={novoProduto.nome} onChange={handleChange} placeholder="Ex: Caderno 10 matérias" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <input type="text" name="nome" value={novoProduto.nome} onChange={handleChange} placeholder="Ex: Caderno 10 matérias" className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
             </div>
             
             <div className="flex flex-col lg:col-span-1">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Quantidade <span className="text-red-500">*</span></label>
-              <input type="number" name="quantidade" value={novoProduto.quantidade} onChange={handleChange} placeholder="Ex: 50" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <input type="number" name="quantidade" value={novoProduto.quantidade} onChange={handleChange} placeholder="Ex: 50" className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
             </div>
 
             <div className="flex flex-col lg:col-span-1">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Preço Unitário (R$) <span className="text-red-500">*</span></label>
-              <input type="number" name="preco" step="0.01" min="0" value={novoProduto.preco} onChange={handleChange} placeholder="Ex: 15.50" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <input type="number" name="preco" step="0.01" min="0" value={novoProduto.preco} onChange={handleChange} placeholder="Ex: 15.50" className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
             </div>
           </div>
 
@@ -186,8 +186,8 @@ export default function Estoque() {
       )}
 
       {/* TABELA DE ESTOQUE */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto hide-scrollbar">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden w-full">
+        <div className="overflow-x-auto hide-scrollbar w-full">
           <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 font-bold">

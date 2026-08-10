@@ -274,14 +274,14 @@ export default function Vendas() {
   const valorParcelaAtual = (totalVendaAtual - entradaAtual) / parcelasCrediarioAtual;
 
   return (
-    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8 w-full overflow-hidden">
       
       {alerta.visivel && (
         <AlertaFlutuante mensagem={alerta.mensagem} tipo={alerta.tipo} onClose={fecharAlerta} />
       )}
 
       {/* HEADER PAGE */}
-      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-4">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-4 w-full">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">PDV / Lançamentos</h2>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Registre as saídas da {nomeLoja}</p>
@@ -289,7 +289,7 @@ export default function Vendas() {
       </div>
 
       {/* FORMULÁRIO DE CHECKOUT */}
-      <form onSubmit={handleSubmit} className={`bg-white p-5 sm:p-8 rounded-2xl border shadow-lg transition-all duration-300 animate-fade-in-down ${editandoId ? 'border-yellow-300 ring-4 ring-yellow-50 shadow-yellow-100/50' : 'border-green-100 shadow-green-50/20'}`}>
+      <form onSubmit={handleSubmit} className={`bg-white p-5 sm:p-8 rounded-2xl border shadow-lg transition-all duration-300 animate-fade-in-down w-full overflow-hidden ${editandoId ? 'border-yellow-300 ring-4 ring-yellow-50 shadow-yellow-100/50' : 'border-green-100 shadow-green-50/20'}`}>
         
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800">
@@ -302,13 +302,13 @@ export default function Vendas() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 sm:gap-5 mb-8">
-          <div className="flex flex-col sm:col-span-2 md:col-span-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 sm:gap-5 mb-8 w-full">
+          <div className="flex flex-col sm:col-span-2 md:col-span-1 w-full">
             <label className="mb-2 text-sm font-semibold text-gray-700">Data da Venda <span className="text-red-500">*</span></label>
             <input type="date" name="dataVenda" value={novaVenda.dataVenda} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
           </div>
           
-          <div className="flex flex-col sm:col-span-2 md:col-span-2 relative">
+          <div className="flex flex-col sm:col-span-2 md:col-span-2 relative w-full">
             <label className="mb-2 text-sm font-semibold text-gray-700">Produto <span className="text-red-500">*</span></label>
             <input 
               type="text" 
@@ -343,21 +343,21 @@ export default function Vendas() {
             )}
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full">
             <label className="mb-2 text-sm font-semibold text-gray-700">Qtd. <span className="text-red-500">*</span></label>
             <input type="number" name="quantidade" min="1" value={novaVenda.quantidade} onChange={handleChange} placeholder="1" className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
           </div>
           
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full">
             <label className="mb-2 text-sm font-semibold text-gray-700">V. Unit. (R$) <span className="text-red-500">*</span></label>
             <input type="number" name="valorUnitario" step="0.01" min="0" value={novaVenda.valorUnitario} onChange={handleChange} placeholder="99.90" className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
           </div>
         </div>
 
         <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-3">2. Pagamento e Cliente</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 w-full">
           
-          <div className="flex flex-col sm:col-span-2 relative">
+          <div className="flex flex-col sm:col-span-2 relative w-full">
             <label className="mb-2 text-sm font-semibold text-gray-700">Vincular Cliente (Opcional)</label>
             <input 
               type="text" 
@@ -389,7 +389,7 @@ export default function Vendas() {
             )}
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col w-full">
             <label className="mb-2 text-sm font-semibold text-gray-700">Modalidade</label>
             <select name="formaPagamento" value={novaVenda.formaPagamento} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-extrabold text-green-700">
               <option value="Dinheiro">💵 Dinheiro</option>
@@ -400,7 +400,7 @@ export default function Vendas() {
           </div>
 
           {novaVenda.formaPagamento === 'Cartão' && (
-            <div className="flex flex-col">
+            <div className="flex flex-col w-full">
               <label className="mb-2 text-sm font-semibold text-gray-700">Parcelas</label>
               <select name="parcelasCartao" value={novaVenda.parcelasCartao} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map(num => <option key={num} value={num}>{num}x {num===1?'(À vista)':''}</option>)}
@@ -410,17 +410,17 @@ export default function Vendas() {
 
           {novaVenda.formaPagamento === 'Crediário' && (
             <>
-              <div className="flex flex-col">
+              <div className="flex flex-col w-full">
                 <label className="mb-2 text-sm font-semibold text-gray-700">Parcelas</label>
                 <select name="parcelasCrediario" value={novaVenda.parcelasCrediario} onChange={handleChange} className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
                   {[1,2,3,4,5,6,7,8,9,10,11,12].map(num => <option key={num} value={num}>{num}x</option>)}
                 </select>
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col w-full">
                 <label className="mb-2 text-sm font-semibold text-gray-700">Entrada (R$)</label>
                 <input type="number" name="valorEntrada" step="0.01" min="0" value={novaVenda.valorEntrada} onChange={handleChange} className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800" />
               </div>
-              <div className="flex flex-col sm:col-span-2">
+              <div className="flex flex-col sm:col-span-2 w-full">
                 <label className="mb-2 text-sm font-semibold text-gray-700">Venc. 1ª Parcela <span className="text-red-500">*</span></label>
                 <input type="date" name="dataPrimeiraParcela" value={novaVenda.dataPrimeiraParcela} onChange={handleChange} className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800" />
               </div>
@@ -428,7 +428,7 @@ export default function Vendas() {
           )}
         </div>
 
-        <div className="mt-8 flex flex-col md:flex-row items-center justify-between border-t border-gray-100 pt-6 sm:pt-8 gap-4 sm:gap-6">
+        <div className="mt-8 flex flex-col md:flex-row items-center justify-between border-t border-gray-100 pt-6 sm:pt-8 gap-4 sm:gap-6 w-full">
           <div className="text-base text-gray-500 text-center md:text-left font-semibold w-full md:w-auto">
             Total a Cobrar: 
             <span className="font-black text-3xl sm:text-4xl text-gray-900 ml-2 sm:ml-3 block sm:inline-block">
@@ -436,7 +436,7 @@ export default function Vendas() {
             </span>
             
             {novaVenda.formaPagamento === 'Crediário' && totalVendaAtual > 0 && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800 shadow-sm text-left">
+              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-800 shadow-sm text-left w-full overflow-hidden">
                 <p className="font-extrabold mb-2 uppercase tracking-widest text-[11px] text-yellow-700">🧾 Resumo do Fiado</p>
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-medium">Entrada recebida:</span>
@@ -467,7 +467,7 @@ export default function Vendas() {
       {/* ========================================================================================= */}
       {/* HISTÓRICO DE VENDAS COM FILTRO */}
       {/* ========================================================================================= */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-10 sm:mt-12 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-10 sm:mt-12 gap-4 w-full">
         <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">Histórico de Saídas</h3>
         
         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
@@ -489,8 +489,8 @@ export default function Vendas() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto hide-scrollbar">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden w-full">
+        <div className="overflow-x-auto hide-scrollbar w-full">
           <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 font-bold">
