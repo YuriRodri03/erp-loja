@@ -13,7 +13,7 @@ import Estoque from './pages/Estoque';
 import Vendas from './pages/Vendas';
 import Clientes from './pages/Clientes';
 import Despesas from './pages/Despesas';
-import Cobrancas from './pages/Cobrancas'; // <-- A nova página de cobranças!
+import Cobrancas from './pages/Cobrancas';
 
 function App() {
   return (
