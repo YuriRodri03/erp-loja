@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { AppContext } from '../utils/AppProvider';
 import { adicionarLinha, editarLinha, deletarLinha } from '../services/googleSheets';
-import AlertaFlutuante from '../components/AlertaFlutuante'; // IMPORTANDO O NOVO ALERTA
+import AlertaFlutuante from '../components/AlertaFlutuante';
 
 export default function Estoque() {
   const { produtos, setProdutos, tokenGoogle, idPlanilha, nomeLoja } = useContext(AppContext);
@@ -10,17 +10,12 @@ export default function Estoque() {
   const [novoProduto, setNovoProduto] = useState(estadoInicial);
   const [editandoId, setEditandoId] = useState(null);
   
-  // Controle visual
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [processandoAcao, setProcessandoAcao] = useState(false);
   
-  // ESTADOS DOS ALERTAS
   const [alerta, setAlerta] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
 
-  // =========================================================================
-  // FUNÇÃO AUXILIAR PARA DISPARAR ALERTAS
-  // =========================================================================
   const mostrarAlerta = (mensagem, tipo = 'sucesso') => {
     setAlerta({ visivel: true, mensagem, tipo });
   };
@@ -29,9 +24,6 @@ export default function Estoque() {
     setAlerta({ ...alerta, visivel: false });
   };
 
-  // =========================================================================
-  // MANIPULAÇÃO DE DADOS
-  // =========================================================================
   const handleChange = (e) => {
     setNovoProduto({ ...novoProduto, [e.target.name]: e.target.value });
   };
@@ -52,7 +44,6 @@ export default function Estoque() {
     const qtd = Number(novoProduto.quantidade);
     const preco = Number(novoProduto.preco);
 
-    // DADOS A SEREM SALVOS (Ordem: ID, Data, Nome, Quantidade, Preco)
     const arrayDadosSheet = [
       editandoId || Date.now(), 
       editandoId ? produtos.find(p => p.id === editandoId).dataCadastro : dataCadastro, 
@@ -60,7 +51,6 @@ export default function Estoque() {
     ];
 
     if (editandoId) {
-      // ATUALIZAÇÃO NO DRIVE (PUT)
       const salvo = await editarLinha(tokenGoogle, idPlanilha, 'Estoque', editandoId, arrayDadosSheet);
       if (salvo) {
         setProdutos(produtos.map(p => p.id === editandoId ? { 
@@ -73,7 +63,6 @@ export default function Estoque() {
         mostrarAlerta("Erro ao editar o produto no Drive.", "erro");
       }
     } else {
-      // CRIAÇÃO NO DRIVE (POST)
       const salvo = await adicionarLinha(tokenGoogle, idPlanilha, 'Estoque', arrayDadosSheet);
       if (salvo) {
         setProdutos([...produtos, { 
@@ -116,39 +105,30 @@ export default function Estoque() {
     }
   };
 
-  // Cálculo de Patrimônio Imobilizado
   const totalImobilizado = produtos.reduce((acc, p) => acc + (p.quantidade * p.preco), 0);
   const totalItens = produtos.length;
 
-  // =========================================================================
-  // INTERFACE
-  // =========================================================================
   return (
-    <div className="font-sans relative max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
+    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
       
-      {/* RENDERIZAÇÃO DO COMPONENTE FLUTUANTE DE ALERTA */}
       {alerta.visivel && (
-        <AlertaFlutuante 
-          mensagem={alerta.mensagem} 
-          tipo={alerta.tipo} 
-          onClose={fecharAlerta} 
-        />
+        <AlertaFlutuante mensagem={alerta.mensagem} tipo={alerta.tipo} onClose={fecharAlerta} />
       )}
 
       {/* HEADER PAGE */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-6">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-5 sm:gap-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Gestão de Estoque</h2>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Controle de inventário da {nomeLoja}</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
-          <div className="bg-blue-50 px-5 py-3 rounded-xl border border-blue-200 shadow-sm flex items-center w-full sm:w-auto">
-            <span className="text-3xl mr-4">📦</span>
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full xl:w-auto">
+          <div className="bg-blue-50 px-4 sm:px-5 py-3 rounded-xl border border-blue-200 shadow-sm flex items-center w-full sm:w-auto">
+            <span className="text-2xl sm:text-3xl mr-3 sm:mr-4">📦</span>
             <div>
-              <p className="text-[10px] text-blue-800 font-bold uppercase tracking-widest">Valor Imobilizado</p>
-              <p className="text-2xl font-black text-blue-700">R$ {totalImobilizado.toFixed(2)}</p>
-              <p className="text-xs text-blue-600 font-semibold">{totalItens} produtos únicos</p>
+              <p className="text-[10px] sm:text-xs text-blue-800 font-bold uppercase tracking-widest">Valor Imobilizado</p>
+              <p className="text-xl sm:text-2xl font-black text-blue-700 truncate max-w-[120px] sm:max-w-none">R$ {totalImobilizado.toFixed(2)}</p>
+              <p className="text-[10px] sm:text-xs text-blue-600 font-semibold">{totalItens} produtos únicos</p>
             </div>
           </div>
           
@@ -158,10 +138,10 @@ export default function Estoque() {
               setNovoProduto(estadoInicial);
               setMostrarFormulario(!mostrarFormulario);
             }} 
-            className={`w-full sm:w-auto px-8 py-4 rounded-xl font-bold shadow-sm transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap ${mostrarFormulario ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+            className={`w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-bold shadow-sm transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap ${mostrarFormulario ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
           >
             {mostrarFormulario ? (
-              <><span>✕</span> Fechar Formulário</>
+              <><span>✕</span> Fechar</>
             ) : (
               <><span>➕</span> Novo Produto</>
             )}
@@ -171,30 +151,30 @@ export default function Estoque() {
 
       {/* FORMULÁRIO ESCONDIDO */}
       {mostrarFormulario && (
-        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-2xl border border-blue-100 shadow-lg shadow-blue-50 animate-fade-in-down">
-          <h3 className="text-xl font-bold text-gray-800 mb-6 pb-3 border-b border-gray-100">
+        <form onSubmit={handleSubmit} className="bg-white p-5 sm:p-8 rounded-2xl border border-blue-100 shadow-lg shadow-blue-50 animate-fade-in-down">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-5 sm:mb-6 pb-3 border-b border-gray-100">
             {editandoId ? '✏️ Editando Produto' : '📦 Adicionar Novo Produto'}
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <div className="flex flex-col lg:col-span-2">
-              <label className="mb-2 text-sm font-semibold text-gray-700">Nome do Produto <span className="text-red-500">*</span></label>
-              <input type="text" name="nome" value={novoProduto.nome} onChange={handleChange} placeholder="Ex: Caderno 10 matérias" className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Nome do Produto <span className="text-red-500">*</span></label>
+              <input type="text" name="nome" value={novoProduto.nome} onChange={handleChange} placeholder="Ex: Caderno 10 matérias" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
             </div>
             
             <div className="flex flex-col lg:col-span-1">
-              <label className="mb-2 text-sm font-semibold text-gray-700">Quantidade <span className="text-red-500">*</span></label>
-              <input type="number" name="quantidade" value={novoProduto.quantidade} onChange={handleChange} placeholder="Ex: 50" className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Quantidade <span className="text-red-500">*</span></label>
+              <input type="number" name="quantidade" value={novoProduto.quantidade} onChange={handleChange} placeholder="Ex: 50" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
             </div>
 
             <div className="flex flex-col lg:col-span-1">
-              <label className="mb-2 text-sm font-semibold text-gray-700">Preço Unitário (R$) <span className="text-red-500">*</span></label>
-              <input type="number" name="preco" step="0.01" min="0" value={novoProduto.preco} onChange={handleChange} placeholder="Ex: 15.50" className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Preço Unitário (R$) <span className="text-red-500">*</span></label>
+              <input type="number" name="preco" step="0.01" min="0" value={novoProduto.preco} onChange={handleChange} placeholder="Ex: 15.50" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
             </div>
           </div>
 
-          <div className="mt-8 flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100">
-            <button type="submit" disabled={salvando} className={`w-full sm:w-auto px-10 py-3.5 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${salvando ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:-translate-y-0.5'}`}>
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3 pt-5 sm:pt-6 border-t border-gray-100">
+            <button type="submit" disabled={salvando} className={`w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-3.5 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${salvando ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:-translate-y-0.5'}`}>
               {salvando ? (
                 <><span className="animate-spin">⏳</span> Processando...</>
               ) : (
@@ -207,56 +187,57 @@ export default function Estoque() {
 
       {/* TABELA DE ESTOQUE */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto hide-scrollbar">
           <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-widest text-gray-500 font-bold">
-                <th className="px-6 py-5">Produto</th>
-                <th className="px-6 py-5 text-center w-32">Em Estoque</th>
-                <th className="px-6 py-5 text-right w-40">Preço Venda</th>
-                <th className="px-6 py-5 text-right w-40">Valor Total</th>
-                <th className="px-6 py-5 text-center w-48">Ações</th>
+              <tr className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 font-bold">
+                <th className="px-4 sm:px-6 py-4 sm:py-5">Produto</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5 text-center w-24 sm:w-32">Estoque</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5 text-right w-24 sm:w-40">Preço</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5 text-right w-24 sm:w-40">Total</th>
+                <th className="px-4 sm:px-6 py-4 sm:py-5 text-center w-24 sm:w-48">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {produtos.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-12 text-center">
-                    <p className="text-gray-400 text-base font-medium">Seu estoque está vazio.</p>
-                    <p className="text-gray-400 text-sm mt-1">Clique em "Novo Produto" para começar a preencher as prateleiras.</p>
+                  <td colSpan="5" className="p-8 sm:p-12 text-center">
+                    <p className="text-gray-400 text-sm sm:text-base font-medium">Seu estoque está vazio.</p>
                   </td>
                 </tr>
               ) : (
                 produtos.map((produto) => (
                   <tr key={produto.id} className="hover:bg-blue-50/40 transition-colors group">
-                    <td className="px-6 py-4">
-                      <span className="font-extrabold text-gray-900 text-base">{produto.nome}</span>
-                      <span className="block text-xs font-medium text-gray-400 mt-1">Cadastrado em {produto.dataCadastro}</span>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                      <span className="font-extrabold text-gray-900 text-sm sm:text-base truncate max-w-[120px] sm:max-w-none block">{produto.nome}</span>
+                      <span className="text-[10px] sm:text-xs font-medium text-gray-400 mt-0.5 sm:mt-1 block">Add em {produto.dataCadastro}</span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-3 py-1.5 rounded-lg font-black text-sm ${produto.quantidade <= 5 ? 'bg-red-100 text-red-700 ring-1 ring-red-200' : 'bg-gray-100 text-gray-700'}`}>
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
+                      <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg font-black text-[10px] sm:text-sm ${produto.quantidade <= 5 ? 'bg-red-100 text-red-700 ring-1 ring-red-200' : 'bg-gray-100 text-gray-700'}`}>
                         {produto.quantidade} un
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-semibold text-gray-600 text-right text-base">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 font-semibold text-gray-600 text-right text-xs sm:text-base">
                       R$ {Number(produto.preco).toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 font-black text-blue-700 text-right text-lg">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 font-black text-blue-700 text-right text-sm sm:text-lg">
                       R$ {(produto.quantidade * produto.preco).toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center items-center space-x-2">
+                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
+                      <div className="flex justify-center items-center space-x-1 sm:space-x-2">
                         <button 
                           onClick={() => handleEditar(produto)} 
                           disabled={processandoAcao} 
-                          className="px-4 py-2 bg-gray-50 text-gray-700 hover:bg-gray-200 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 border border-gray-200"
+                          className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 text-gray-700 hover:bg-gray-200 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50 border border-gray-200"
+                          title="Editar Produto"
                         >
-                          ✏️ Editar
+                          ✏️ <span className="hidden sm:inline">Editar</span>
                         </button>
                         <button 
                           onClick={() => handleDeletar(produto.id)} 
                           disabled={processandoAcao} 
-                          className="px-3 py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                          className="px-2 sm:px-3 py-1.5 sm:py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50"
+                          title="Excluir Produto"
                         >
                           ✕
                         </button>

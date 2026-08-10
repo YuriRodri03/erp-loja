@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { AppContext } from '../utils/AppProvider';
 import { adicionarLinha, editarLinha, deletarLinha } from '../services/googleSheets'; 
-import AlertaFlutuante from '../components/AlertaFlutuante'; // IMPORTANDO O NOVO ALERTA
+import AlertaFlutuante from '../components/AlertaFlutuante';
 
 export default function Vendas() {
   const { vendas, setVendas, clientes, produtos, setProdutos, tokenGoogle, idPlanilha, nomeLoja } = useContext(AppContext);
@@ -47,12 +47,8 @@ export default function Vendas() {
   const [salvando, setSalvando] = useState(false);
   const [processandoAcao, setProcessandoAcao] = useState(false);
   
-  // ESTADOS DOS ALERTAS
   const [alerta, setAlerta] = useState({ visivel: false, mensagem: '', tipo: 'sucesso' });
 
-  // =========================================================================
-  // FUNÇÃO AUXILIAR PARA DISPARAR ALERTAS
-  // =========================================================================
   const mostrarAlerta = (mensagem, tipo = 'sucesso') => {
     setAlerta({ visivel: true, mensagem, tipo });
   };
@@ -61,9 +57,6 @@ export default function Vendas() {
     setAlerta({ ...alerta, visivel: false });
   };
 
-  // =========================================================================
-  // MANIPULAÇÃO DE FORMULÁRIO E BUSCAS
-  // =========================================================================
   const handleChange = (e) => {
     setNovaVenda({ ...novaVenda, [e.target.name]: e.target.value });
   };
@@ -113,9 +106,6 @@ export default function Vendas() {
     }
   };
 
-  // =========================================================================
-  // SALVAR / EDITAR / DELETAR
-  // =========================================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     fecharAlerta();
@@ -284,19 +274,14 @@ export default function Vendas() {
   const valorParcelaAtual = (totalVendaAtual - entradaAtual) / parcelasCrediarioAtual;
 
   return (
-    <div className="font-sans relative max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
+    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
       
-      {/* RENDERIZAÇÃO DO COMPONENTE FLUTUANTE DE ALERTA */}
       {alerta.visivel && (
-        <AlertaFlutuante 
-          mensagem={alerta.mensagem} 
-          tipo={alerta.tipo} 
-          onClose={fecharAlerta} 
-        />
+        <AlertaFlutuante mensagem={alerta.mensagem} tipo={alerta.tipo} onClose={fecharAlerta} />
       )}
 
       {/* HEADER PAGE */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-6">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">PDV / Lançamentos</h2>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Registre as saídas da {nomeLoja}</p>
@@ -304,11 +289,11 @@ export default function Vendas() {
       </div>
 
       {/* FORMULÁRIO DE CHECKOUT */}
-      <form onSubmit={handleSubmit} className={`bg-white p-6 sm:p-8 rounded-2xl border shadow-lg transition-all duration-300 animate-fade-in-down ${editandoId ? 'border-yellow-300 ring-4 ring-yellow-50 shadow-yellow-100/50' : 'border-green-100 shadow-green-50/20'}`}>
+      <form onSubmit={handleSubmit} className={`bg-white p-5 sm:p-8 rounded-2xl border shadow-lg transition-all duration-300 animate-fade-in-down ${editandoId ? 'border-yellow-300 ring-4 ring-yellow-50 shadow-yellow-100/50' : 'border-green-100 shadow-green-50/20'}`}>
         
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-3">
-          <h3 className="text-xl font-bold text-gray-800">
-            {editandoId ? '✏️ Modo de Edição de Venda' : '1. Detalhes do Item'}
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+            {editandoId ? '✏️ Modo de Edição' : '1. Detalhes do Item'}
           </h3>
           {editandoId && (
             <button type="button" onClick={cancelarEdicao} className="text-sm text-red-500 hover:text-red-700 hover:underline font-bold transition-colors">
@@ -317,13 +302,13 @@ export default function Vendas() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-5 mb-8">
-          <div className="flex flex-col">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 sm:gap-5 mb-8">
+          <div className="flex flex-col sm:col-span-2 md:col-span-1">
             <label className="mb-2 text-sm font-semibold text-gray-700">Data da Venda <span className="text-red-500">*</span></label>
-            <input type="date" name="dataVenda" value={novaVenda.dataVenda} onChange={handleChange} className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
+            <input type="date" name="dataVenda" value={novaVenda.dataVenda} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
           </div>
           
-          <div className="flex flex-col md:col-span-2 relative">
+          <div className="flex flex-col sm:col-span-2 md:col-span-2 relative">
             <label className="mb-2 text-sm font-semibold text-gray-700">Produto <span className="text-red-500">*</span></label>
             <input 
               type="text" 
@@ -335,7 +320,7 @@ export default function Vendas() {
                 setMostrarDropdownProduto(true);
               }}
               onFocus={() => setMostrarDropdownProduto(true)}
-              className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+              className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
               required 
             />
             
@@ -348,9 +333,9 @@ export default function Vendas() {
                 </li>
                 {produtosFiltrados.map(p => (
                   <li key={p.id} className="px-5 py-3 hover:bg-green-50 cursor-pointer transition-colors flex justify-between items-center" onClick={() => selecionarProduto(p)}>
-                    <span className="font-bold text-gray-800 text-sm">{p.nome}</span>
-                    <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">
-                      Estoque: {p.quantidade} | R$ {p.preco.toFixed(2)}
+                    <span className="font-bold text-gray-800 text-sm truncate max-w-[150px] sm:max-w-none">{p.nome}</span>
+                    <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md whitespace-nowrap">
+                      Estq: {p.quantidade} | R$ {p.preco.toFixed(2)}
                     </span>
                   </li>
                 ))}
@@ -360,23 +345,23 @@ export default function Vendas() {
 
           <div className="flex flex-col">
             <label className="mb-2 text-sm font-semibold text-gray-700">Qtd. <span className="text-red-500">*</span></label>
-            <input type="number" name="quantidade" min="1" value={novaVenda.quantidade} onChange={handleChange} placeholder="1" className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
+            <input type="number" name="quantidade" min="1" value={novaVenda.quantidade} onChange={handleChange} placeholder="1" className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
           </div>
           
           <div className="flex flex-col">
-            <label className="mb-2 text-sm font-semibold text-gray-700">Valor Unit. (R$) <span className="text-red-500">*</span></label>
-            <input type="number" name="valorUnitario" step="0.01" min="0" value={novaVenda.valorUnitario} onChange={handleChange} placeholder="99.90" className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
+            <label className="mb-2 text-sm font-semibold text-gray-700">V. Unit. (R$) <span className="text-red-500">*</span></label>
+            <input type="number" name="valorUnitario" step="0.01" min="0" value={novaVenda.valorUnitario} onChange={handleChange} placeholder="99.90" className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
           </div>
         </div>
 
-        <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-3">2. Pagamento e Cliente</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-3">2. Pagamento e Cliente</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           
-          <div className="flex flex-col lg:col-span-2 relative">
+          <div className="flex flex-col sm:col-span-2 relative">
             <label className="mb-2 text-sm font-semibold text-gray-700">Vincular Cliente (Opcional)</label>
             <input 
               type="text" 
-              placeholder="Digite o nome ou CPF para buscar..."
+              placeholder="Nome ou CPF..."
               value={termoBuscaCliente}
               onChange={(e) => {
                 setTermoBuscaCliente(e.target.value);
@@ -384,7 +369,7 @@ export default function Vendas() {
                 if(novaVenda.clienteId) setNovaVenda({ ...novaVenda, clienteId: '' }); 
               }}
               onFocus={() => setMostrarDropdownCliente(true)}
-              className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+              className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
             />
             
             {mostrarDropdownCliente && <div className="fixed inset-0 z-10" onClick={() => setMostrarDropdownCliente(false)}></div>}
@@ -396,7 +381,7 @@ export default function Vendas() {
                 </li>
                 {clientesFiltrados.map(c => (
                   <li key={c.id} className="px-5 py-3 hover:bg-green-50 cursor-pointer transition-colors flex flex-col justify-center" onClick={() => selecionarCliente(c)}>
-                    <div className="font-bold text-gray-800 text-sm">{c.nome}</div>
+                    <div className="font-bold text-gray-800 text-sm truncate">{c.nome}</div>
                     <div className="text-[11px] font-medium text-gray-500 mt-0.5">CPF: {c.cpf || 'Não cadastrado'}</div>
                   </li>
                 ))}
@@ -406,7 +391,7 @@ export default function Vendas() {
 
           <div className="flex flex-col">
             <label className="mb-2 text-sm font-semibold text-gray-700">Modalidade</label>
-            <select name="formaPagamento" value={novaVenda.formaPagamento} onChange={handleChange} className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-extrabold text-green-700">
+            <select name="formaPagamento" value={novaVenda.formaPagamento} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-extrabold text-green-700">
               <option value="Dinheiro">💵 Dinheiro</option>
               <option value="Pix">💠 Pix</option>
               <option value="Cartão">💳 Cartão</option>
@@ -417,7 +402,7 @@ export default function Vendas() {
           {novaVenda.formaPagamento === 'Cartão' && (
             <div className="flex flex-col">
               <label className="mb-2 text-sm font-semibold text-gray-700">Parcelas</label>
-              <select name="parcelasCartao" value={novaVenda.parcelasCartao} onChange={handleChange} className="px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
+              <select name="parcelasCartao" value={novaVenda.parcelasCartao} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map(num => <option key={num} value={num}>{num}x {num===1?'(À vista)':''}</option>)}
               </select>
             </div>
@@ -427,26 +412,26 @@ export default function Vendas() {
             <>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-700">Parcelas</label>
-                <select name="parcelasCrediario" value={novaVenda.parcelasCrediario} onChange={handleChange} className="px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
+                <select name="parcelasCrediario" value={novaVenda.parcelasCrediario} onChange={handleChange} className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
                   {[1,2,3,4,5,6,7,8,9,10,11,12].map(num => <option key={num} value={num}>{num}x</option>)}
                 </select>
               </div>
-              <div className="flex flex-col lg:col-span-1">
+              <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-700">Entrada (R$)</label>
-                <input type="number" name="valorEntrada" step="0.01" min="0" value={novaVenda.valorEntrada} onChange={handleChange} className="px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800" />
+                <input type="number" name="valorEntrada" step="0.01" min="0" value={novaVenda.valorEntrada} onChange={handleChange} className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800" />
               </div>
-              <div className="flex flex-col lg:col-span-2">
+              <div className="flex flex-col sm:col-span-2">
                 <label className="mb-2 text-sm font-semibold text-gray-700">Venc. 1ª Parcela <span className="text-red-500">*</span></label>
-                <input type="date" name="dataPrimeiraParcela" value={novaVenda.dataPrimeiraParcela} onChange={handleChange} className="px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800" />
+                <input type="date" name="dataPrimeiraParcela" value={novaVenda.dataPrimeiraParcela} onChange={handleChange} className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:bg-white transition-all text-sm font-medium text-gray-800" />
               </div>
             </>
           )}
         </div>
 
-        <div className="mt-8 flex flex-col md:flex-row items-center justify-between border-t border-gray-100 pt-8 gap-6">
-          <div className="text-base text-gray-500 text-center md:text-left font-semibold">
+        <div className="mt-8 flex flex-col md:flex-row items-center justify-between border-t border-gray-100 pt-6 sm:pt-8 gap-4 sm:gap-6">
+          <div className="text-base text-gray-500 text-center md:text-left font-semibold w-full md:w-auto">
             Total a Cobrar: 
-            <span className="font-black text-4xl text-gray-900 ml-3 block sm:inline-block">
+            <span className="font-black text-3xl sm:text-4xl text-gray-900 ml-2 sm:ml-3 block sm:inline-block">
               R$ {totalVendaAtual.toFixed(2)}
             </span>
             
@@ -459,7 +444,7 @@ export default function Vendas() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Restante parcelado:</span>
-                  <span className="font-black text-red-600">{parcelasCrediarioAtual}x de R$ {valorParcelaAtual > 0 ? valorParcelaAtual.toFixed(2) : '0.00'}</span>
+                  <span className="font-black text-red-600 truncate ml-2">{parcelasCrediarioAtual}x de R$ {valorParcelaAtual > 0 ? valorParcelaAtual.toFixed(2) : '0.00'}</span>
                 </div>
               </div>
             )}
@@ -468,10 +453,10 @@ export default function Vendas() {
           <button 
             type="submit" 
             disabled={salvando} 
-            className={`w-full md:w-auto px-12 py-4.5 text-white text-lg font-bold rounded-xl shadow-lg transition-all ${salvando ? 'bg-gray-400 cursor-wait' : (editandoId ? 'bg-yellow-500 hover:bg-yellow-600 hover:-translate-y-0.5' : 'bg-green-600 hover:bg-green-700 hover:-translate-y-0.5')}`}
+            className={`w-full md:w-auto px-8 sm:px-12 py-4 text-white text-base sm:text-lg font-bold rounded-xl shadow-lg transition-all ${salvando ? 'bg-gray-400 cursor-wait' : (editandoId ? 'bg-yellow-500 hover:bg-yellow-600 sm:hover:-translate-y-0.5' : 'bg-green-600 hover:bg-green-700 sm:hover:-translate-y-0.5')}`}
           >
             {salvando ? (
-              <><span className="animate-spin mr-2">⏳</span> Processando...</>
+              <><span className="animate-spin mr-2 inline-block">⏳</span> Processando...</>
             ) : (
               editandoId ? 'Atualizar Venda' : 'Finalizar Venda'
             )}
@@ -482,22 +467,22 @@ export default function Vendas() {
       {/* ========================================================================================= */}
       {/* HISTÓRICO DE VENDAS COM FILTRO */}
       {/* ========================================================================================= */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-12 gap-4">
-        <h3 className="text-2xl font-extrabold text-gray-900">Histórico de Saídas</h3>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-10 sm:mt-12 gap-4">
+        <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">Histórico de Saídas</h3>
         
         <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
-          <div className="flex items-center justify-between sm:justify-start space-x-3 bg-green-50 px-5 py-2.5 rounded-xl border border-green-200 shadow-sm w-full sm:w-auto">
-            <span className="text-green-800 font-bold text-sm">Caixa Mensal:</span>
-            <span className="text-green-700 font-black text-lg">R$ {totalArrecadadoMes.toFixed(2)}</span>
+          <div className="flex items-center justify-between sm:justify-start space-x-3 bg-green-50 px-4 sm:px-5 py-2.5 rounded-xl border border-green-200 shadow-sm w-full sm:w-auto">
+            <span className="text-green-800 font-bold text-xs sm:text-sm">Caixa Mensal:</span>
+            <span className="text-green-700 font-black text-base sm:text-lg">R$ {totalArrecadadoMes.toFixed(2)}</span>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="w-full sm:w-auto bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 px-4 py-2.5 font-bold shadow-sm cursor-pointer">
+            <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="w-full sm:w-auto flex-1 bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 px-3 sm:px-4 py-2.5 font-bold shadow-sm cursor-pointer">
               <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
               <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
               <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
               <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
             </select>
-            <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)} className="w-full sm:w-auto bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 px-4 py-2.5 font-bold shadow-sm cursor-pointer">
+            <select value={filtroAno} onChange={(e) => setFiltroAno(e.target.value)} className="w-full sm:w-auto flex-1 bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 px-3 sm:px-4 py-2.5 font-bold shadow-sm cursor-pointer">
               {anosDisponiveis.map(ano => <option key={ano} value={ano}>{ano}</option>)}
             </select>
           </div>
@@ -505,64 +490,64 @@ export default function Vendas() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto hide-scrollbar">
           <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-widest text-gray-500 font-bold">
-                <th className="p-5">Data</th>
-                <th className="p-5">Produto</th>
-                <th className="p-5 hidden md:table-cell">Cliente</th>
-                <th className="p-5 text-center">Pagamento</th>
-                <th className="p-5 text-right">Total</th>
-                <th className="p-5 text-center">Ações</th>
+              <tr className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 font-bold">
+                <th className="p-4 sm:p-5">Data</th>
+                <th className="p-4 sm:p-5">Produto</th>
+                <th className="p-4 sm:p-5 hidden md:table-cell">Cliente</th>
+                <th className="p-4 sm:p-5 text-center">Pagamento</th>
+                <th className="p-4 sm:p-5 text-right">Total</th>
+                <th className="p-4 sm:p-5 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {vendasFiltradasDaTabela.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="p-12 text-center text-gray-400 font-medium text-base">
+                  <td colSpan="6" className="p-8 sm:p-12 text-center text-gray-400 font-medium text-sm sm:text-base">
                     Nenhuma venda encontrada no filtro de {filtroMes}/{filtroAno}.
                   </td>
                 </tr>
               ) : (
                 vendasFiltradasDaTabela.map((venda) => (
                   <tr key={venda.id} className="hover:bg-green-50/40 transition-colors group">
-                    <td className="p-5 text-gray-500 text-sm font-semibold">{venda.data}</td>
-                    <td className="p-5">
-                      <p className="font-extrabold text-gray-900 text-base">{venda.produto}</p>
-                      <p className="text-xs font-semibold text-gray-500 mt-1">{venda.quantidade}x R$ {Number(venda.valorUnitario).toFixed(2)}</p>
+                    <td className="p-4 sm:p-5 text-gray-500 text-xs sm:text-sm font-semibold">{venda.data}</td>
+                    <td className="p-4 sm:p-5">
+                      <p className="font-extrabold text-gray-900 text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px]">{venda.produto}</p>
+                      <p className="text-[10px] sm:text-xs font-semibold text-gray-500 mt-0.5 sm:mt-1">{venda.quantidade}x R$ {Number(venda.valorUnitario).toFixed(2)}</p>
                     </td>
-                    <td className="p-5 text-gray-700 hidden md:table-cell font-medium">{getNomeCliente(venda.clienteId)}</td>
+                    <td className="p-4 sm:p-5 text-gray-700 hidden md:table-cell font-medium text-sm truncate max-w-[150px]">{getNomeCliente(venda.clienteId)}</td>
                     
-                    <td className="p-5 text-center">
-                      <span className={`px-3 py-1.5 text-xs font-bold rounded-lg tracking-wide ${venda.formaPagamento === 'Crediário' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                    <td className="p-4 sm:p-5 text-center">
+                      <span className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-lg tracking-wide ${venda.formaPagamento === 'Crediário' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
                         {venda.formaPagamento} {(venda.formaPagamento === 'Cartão' || venda.formaPagamento === 'Crediário') ? `(${venda.parcelasCartao || 1}x)` : ''}
                       </span>
                       
-                      {venda.statusPago === 'NÃO' && <span className="block mt-2 text-[10px] font-bold text-red-600 uppercase tracking-widest">PENDENTE</span>}
+                      {venda.statusPago === 'NÃO' && <span className="block mt-1.5 sm:mt-2 text-[9px] sm:text-[10px] font-bold text-red-600 uppercase tracking-widest">PENDENTE</span>}
                       
                       {venda.formaPagamento === 'Crediário' && (
-                        <div className="mt-3 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100 w-full min-w-[140px] shadow-sm text-left">
-                          <div className="flex justify-between items-center mb-1.5">
+                        <div className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-gray-600 bg-gray-50 p-2 sm:p-2.5 rounded-lg border border-gray-100 w-full min-w-[120px] sm:min-w-[140px] shadow-sm text-left">
+                          <div className="flex justify-between items-center mb-1 sm:mb-1.5">
                             <span className="font-medium">Entrada:</span>
                             <span className="font-black text-gray-800">R$ {Number(venda.valorEntrada || 0).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="font-medium">1ª Parc:</span>
-                            <span className="font-bold text-gray-500 bg-white px-1.5 py-0.5 rounded border border-gray-200">{venda.dataPrimeiraParcela}</span>
+                            <span className="font-bold text-gray-500 bg-white px-1 sm:px-1.5 py-0.5 rounded border border-gray-200">{venda.dataPrimeiraParcela}</span>
                           </div>
                         </div>
                       )}
                     </td>
                     
-                    <td className="p-5 font-black text-gray-900 text-right text-lg">
+                    <td className="p-4 sm:p-5 font-black text-gray-900 text-right text-base sm:text-lg">
                       R$ {(venda.quantidade * venda.valorUnitario).toFixed(2)}
                     </td>
                     
-                    <td className="p-5 text-center space-x-2">
-                      <div className="flex justify-center items-center h-full pt-2">
-                        <button onClick={() => handleEditar(venda)} disabled={processandoAcao} className="px-4 py-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-xs font-bold transition-colors disabled:opacity-50" title="Editar Venda">✏️ Editar</button>
-                        <button onClick={() => handleDeletar(venda.id)} disabled={processandoAcao} className="px-3 py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 ml-2" title="Excluir Venda">✕</button>
+                    <td className="p-4 sm:p-5 text-center space-x-1 sm:space-x-2">
+                      <div className="flex justify-center items-center h-full pt-1 sm:pt-2">
+                        <button onClick={() => handleEditar(venda)} disabled={processandoAcao} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50" title="Editar Venda">✏️ <span className="hidden sm:inline">Editar</span></button>
+                        <button onClick={() => handleDeletar(venda.id)} disabled={processandoAcao} className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 ml-1 sm:ml-2" title="Excluir Venda">✕</button>
                       </div>
                     </td>
                   </tr>

@@ -62,15 +62,14 @@ export default function Cobrancas() {
       const valorParcela = (Number(v.total) - Number(v.valorEntrada || 0)) / numParcelas;
       const vencimentos = calcularVencimentos(v.dataPrimeiraParcela, numParcelas);
 
-      // Se o cliente não existir no mapa, cria
       if (!devedoresMap[v.clienteId]) {
          const cli = clientes.find(c => c.id == v.clienteId);
-         if (!cli) return; // Ignora se não achar o cliente (venda avulsa no fiado)
+         if (!cli) return; 
          
          devedoresMap[v.clienteId] = {
             cliente: cli,
-            totalDevido: 0,
-            parcelasPendentes: []
+            totalDevidoCritico: 0, // Soma apenas Atrasado + Hoje
+            parcelasCriticas: []   // Guarda apenas Atrasado + Hoje
          };
       }
 
@@ -89,17 +88,20 @@ export default function Cobrancas() {
               totalFuturo += valorParcela;
             }
 
-            devedoresMap[v.clienteId].totalDevido += valorParcela;
-            devedoresMap[v.clienteId].parcelasPendentes.push({
-               vendaId: v.id,
-               produto: v.produto,
-               numParcela: idx + 1,
-               totalParcelas: numParcelas,
-               valor: valorParcela,
-               dataVenc: dataVenc,
-               tempoVenc: tempoVenc,
-               statusTempo: statusTempo
-            });
+            // Popula a lista de cobrança APENAS se for Atrasado ou Vence Hoje
+            if (statusTempo === 'ATRASADO' || statusTempo === 'HOJE') {
+                devedoresMap[v.clienteId].totalDevidoCritico += valorParcela;
+                devedoresMap[v.clienteId].parcelasCriticas.push({
+                   vendaId: v.id,
+                   produto: v.produto,
+                   numParcela: idx + 1,
+                   totalParcelas: numParcelas,
+                   valor: valorParcela,
+                   dataVenc: dataVenc,
+                   tempoVenc: tempoVenc,
+                   statusTempo: statusTempo
+                });
+            }
          }
       });
     }
@@ -107,13 +109,12 @@ export default function Cobrancas() {
 
   // Transforma em array, ordena quem deve mais e filtra buscas
   const listaDevedores = Object.values(devedoresMap)
-    .filter(d => d.totalDevido > 0) // Garante que só mostra quem deve
+    .filter(d => d.totalDevidoCritico > 0) // Só mostra na lista quem tem parcela atrasada ou de hoje
     .filter(d => d.cliente.nome.toLowerCase().includes(termoBusca.toLowerCase()))
-    .sort((a, b) => b.totalDevido - a.totalDevido); // Quem deve mais aparece primeiro
+    .sort((a, b) => b.totalDevidoCritico - a.totalDevidoCritico); 
 
-  // Ordena as parcelas dentro do cliente: Atrasadas primeiro
   listaDevedores.forEach(d => {
-      d.parcelasPendentes.sort((a, b) => a.tempoVenc - b.tempoVenc);
+      d.parcelasCriticas.sort((a, b) => a.tempoVenc - b.tempoVenc);
   });
 
   const totalGeralAReceber = totalAtrasado + totalHoje + totalFuturo;
@@ -122,7 +123,7 @@ export default function Cobrancas() {
   // INTEGRAÇÃO COM WHATSAPP
   // =========================================================================
   const gerarLinkWhatsApp = (telefone, parcela) => {
-    const numeroLimpo = telefone.replace(/\D/g, ''); // Tira traços e parênteses
+    const numeroLimpo = telefone.replace(/\D/g, ''); 
     if (!numeroLimpo) return '#';
     
     let saudacao = "";
@@ -130,9 +131,7 @@ export default function Cobrancas() {
         saudacao = `Olá! Passando para lembrar da parcela pendente de R$ ${parcela.valor.toFixed(2)} referente à compra de "${parcela.produto}". O vencimento foi em ${parcela.dataVenc}.`;
     } else if (parcela.statusTempo === 'HOJE') {
         saudacao = `Olá! Tudo bem? Passando para lembrar que sua parcela de R$ ${parcela.valor.toFixed(2)} ("${parcela.produto}") vence hoje (${parcela.dataVenc}).`;
-    } else {
-        saudacao = `Olá! Segue o lembrete da sua próxima parcela de R$ ${parcela.valor.toFixed(2)} ("${parcela.produto}") que vencerá no dia ${parcela.dataVenc}.`;
-    }
+    } 
 
     const mensagemFinal = `${saudacao} Qualquer dúvida, estamos à disposição aqui na ${nomeLoja}!`;
     return `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagemFinal)}`;
@@ -147,7 +146,7 @@ export default function Cobrancas() {
       <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Central de Cobranças</h2>
-          <p className="text-base text-gray-500 mt-1">Acompanhe vencimentos e cobre devedores via WhatsApp</p>
+          <p className="text-base text-gray-500 mt-1">Acompanhe vencimentos críticos e cobre devedores via WhatsApp</p>
         </div>
       </div>
 
@@ -176,7 +175,7 @@ export default function Cobrancas() {
           <div className="relative z-10">
             <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-1">Total a Receber</p>
             <p className="text-3xl font-black text-blue-700 mt-2">R$ {totalGeralAReceber.toFixed(2)}</p>
-            <p className="text-xs text-blue-500 font-bold mt-2">Atrasados + Hoje + Futuro</p>
+            <p className="text-xs text-blue-500 font-bold mt-2">Atrasados + Hoje + <span className="underline">Futuro</span></p>
           </div>
         </div>
       </div>
@@ -193,18 +192,18 @@ export default function Cobrancas() {
         />
       </div>
 
-      {/* LISTA DE DEVEDORES */}
+      {/* LISTA DE DEVEDORES (APENAS ATRASADOS OU DE HOJE) */}
       <div className="space-y-4">
         {listaDevedores.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
             <span className="text-5xl mb-4 block">🏆</span>
             <p className="text-gray-800 font-bold text-xl">Carteira Limpa!</p>
-            <p className="text-gray-500 mt-2">Nenhum cliente está devendo no momento.</p>
+            <p className="text-gray-500 mt-2">Nenhum cliente está com parcelas em atraso ou vencendo hoje.</p>
           </div>
         ) : (
-          listaDevedores.map(({ cliente, totalDevido, parcelasPendentes }) => {
+          listaDevedores.map(({ cliente, totalDevidoCritico, parcelasCriticas }) => {
             const isExpanded = clienteExpandido === cliente.id;
-            const atrasadas = parcelasPendentes.filter(p => p.statusTempo === 'ATRASADO').length;
+            const atrasadas = parcelasCriticas.filter(p => p.statusTempo === 'ATRASADO').length;
 
             return (
               <div key={cliente.id} className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-sm ${atrasadas > 0 ? 'border-red-200' : 'border-gray-200'}`}>
@@ -212,7 +211,7 @@ export default function Cobrancas() {
                 {/* CABEÇALHO DO CLIENTE */}
                 <div onClick={() => toggleCliente(cliente.id)} className={`p-5 flex flex-col sm:flex-row justify-between sm:items-center cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}>
                   <div className="flex items-center gap-4 mb-3 sm:mb-0">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${atrasadas > 0 ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${atrasadas > 0 ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
                       {cliente.nome.charAt(0).toUpperCase()}
                     </div>
                     <div>
@@ -223,8 +222,8 @@ export default function Cobrancas() {
                   
                   <div className="flex items-center justify-between sm:justify-end gap-6 sm:w-auto w-full">
                     <div className="text-left sm:text-right">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">Dívida Total</p>
-                      <p className={`text-2xl font-black ${atrasadas > 0 ? 'text-red-600' : 'text-gray-900'}`}>R$ {totalDevido.toFixed(2)}</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-0.5">Cobrar Agora</p>
+                      <p className={`text-2xl font-black ${atrasadas > 0 ? 'text-red-600' : 'text-yellow-600'}`}>R$ {totalDevidoCritico.toFixed(2)}</p>
                     </div>
                     <div className="text-gray-400 font-bold text-xl transform transition-transform">
                       {isExpanded ? '▲' : '▼'}
@@ -236,18 +235,13 @@ export default function Cobrancas() {
                 {isExpanded && (
                   <div className="bg-gray-50 border-t border-gray-100 p-5 animate-fade-in-down">
                     <div className="space-y-3">
-                      {parcelasPendentes.map((parcela, idx) => {
-                         let corBorda = 'border-blue-200';
-                         let corFundo = 'bg-white';
-                         let icone = '⏳';
-                         let labelStatus = 'Futura';
+                      {parcelasCriticas.map((parcela, idx) => {
+                         let corBorda = 'border-red-300 ring-1 ring-red-100';
+                         let corFundo = 'bg-red-50/50';
+                         let icone = '🚨';
+                         let labelStatus = 'Atrasada';
 
-                         if (parcela.statusTempo === 'ATRASADO') {
-                            corBorda = 'border-red-300 ring-1 ring-red-100';
-                            corFundo = 'bg-red-50/50';
-                            icone = '🚨';
-                            labelStatus = 'Atrasada';
-                         } else if (parcela.statusTempo === 'HOJE') {
+                         if (parcela.statusTempo === 'HOJE') {
                             corBorda = 'border-yellow-300';
                             corFundo = 'bg-yellow-50/50';
                             icone = '⚠️';
@@ -260,7 +254,7 @@ export default function Cobrancas() {
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <span className="text-sm">{icone}</span>
                                   <span className="text-sm font-extrabold text-gray-800">Parcela {parcela.numParcela}/{parcela.totalParcelas}</span>
-                                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-gray-200 text-gray-700">{labelStatus}</span>
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${parcela.statusTempo === 'ATRASADO' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'}`}>{labelStatus}</span>
                                 </div>
                                 <p className="text-sm font-medium text-gray-600">Referente a: <strong className="text-gray-800">{parcela.produto}</strong></p>
                               </div>

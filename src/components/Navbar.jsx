@@ -78,7 +78,7 @@ export default function Navbar() {
   };
 
   const classesLinkAtivo = (caminho) => {
-    const baseClasses = "px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ease-in-out";
+    const baseClasses = "px-3 xl:px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ease-in-out whitespace-nowrap";
     return location.pathname === caminho
       ? `${baseClasses} bg-blue-600 text-white shadow-sm`
       : `${baseClasses} text-gray-300 hover:bg-gray-700 hover:text-white`;
@@ -88,8 +88,10 @@ export default function Navbar() {
     const baseClasses = "block px-4 py-3 rounded-xl text-base font-bold transition-colors";
     return location.pathname === caminho
       ? `${baseClasses} bg-blue-600 text-white shadow-sm`
-      : `${baseClasses} text-gray-300 hover:bg-gray-700 hover:text-white`;
+      : `${baseClasses} text-gray-300 hover:bg-gray-800 hover:text-white`;
   };
+
+  const fecharMenuMobile = () => setMenuMobileAberto(false);
 
   const mostrarModalConfiguracao = tokenGoogle && !idPlanilha && !buscandoNoDrive;
 
@@ -101,15 +103,15 @@ export default function Navbar() {
             
             {/* LOGO / BRAND */}
             <div className="flex-shrink-0 flex items-center">
-              <span className="text-white text-xl sm:text-2xl font-black tracking-tight flex items-center gap-3">
-                <span className="bg-white/10 p-2 rounded-lg">🛒</span> 
-                {!tokenGoogle ? 'Sistema de Gestão' : (buscandoNoDrive ? 'Sincronizando...' : nomeLoja)}
+              <span className="text-white text-lg sm:text-xl xl:text-2xl font-black tracking-tight flex items-center gap-2 sm:gap-3 truncate max-w-[200px] sm:max-w-none">
+                <span className="bg-white/10 p-2 rounded-lg flex-shrink-0">🛒</span> 
+                <span className="truncate">{!tokenGoogle ? 'Sistema de Gestão' : (buscandoNoDrive ? 'Sincronizando...' : nomeLoja)}</span>
               </span>
             </div>
 
             {/* MENU DESKTOP */}
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-3">
+            <div className="hidden lg:block">
+              <div className="flex items-center space-x-1 xl:space-x-3">
                 {tokenGoogle ? (
                   <>
                     <Link to="/dashboard" className={classesLinkAtivo('/dashboard')}>Dashboard</Link>
@@ -119,10 +121,10 @@ export default function Navbar() {
                     <Link to="/clientes" className={classesLinkAtivo('/clientes')}>Clientes</Link>
                     <Link to="/cobrancas" className={classesLinkAtivo('/cobrancas')}>Cobranças</Link>
                     
-                    <div className="flex items-center space-x-3 ml-4 pl-6 border-l border-gray-700 h-10">
+                    <div className="flex items-center space-x-3 ml-2 xl:ml-4 pl-4 xl:pl-6 border-l border-gray-700 h-10">
                       <span className="px-3 py-1.5 bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-bold rounded-lg cursor-default flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></div>
-                        Conectado
+                        <span className="hidden xl:inline">Conectado</span>
                       </span>
                       <button 
                         onClick={handleLogout}
@@ -141,7 +143,7 @@ export default function Navbar() {
             </div>
 
             {/* BOTÃO DO MENU MOBILE (Hambúrguer) */}
-            <div className="md:hidden flex items-center">
+            <div className="lg:hidden flex items-center">
               {tokenGoogle ? (
                 <button 
                   onClick={() => setMenuMobileAberto(!menuMobileAberto)}
@@ -169,21 +171,22 @@ export default function Navbar() {
 
         {/* MENU MOBILE EXPANDIDO */}
         {menuMobileAberto && tokenGoogle && (
-          <div className="md:hidden bg-gray-900 border-t border-gray-800 absolute w-full shadow-2xl rounded-b-2xl animate-fade-in-down">
+          <div className="lg:hidden bg-gray-900 border-t border-gray-800 absolute w-full shadow-2xl rounded-b-2xl animate-fade-in-down max-h-[80vh] overflow-y-auto">
             <div className="px-4 pt-4 pb-6 space-y-2">
-              <Link to="/dashboard" onClick={() => setMenuMobileAberto(false)} className={classesLinkMobileAtivo('/dashboard')}>📊 Dashboard</Link>
-              <Link to="/estoque" onClick={() => setMenuMobileAberto(false)} className={classesLinkMobileAtivo('/estoque')}>📦 Estoque</Link>
-              <Link to="/vendas" onClick={() => setMenuMobileAberto(false)} className={classesLinkMobileAtivo('/vendas')}>🛒 Vendas</Link>
-              <Link to="/clientes" onClick={() => setMenuMobileAberto(false)} className={classesLinkMobileAtivo('/clientes')}>👥 Clientes</Link>
-              <Link to="/despesas" onClick={() => setMenuMobileAberto(false)} className={classesLinkMobileAtivo('/despesas')}>💸 Despesas</Link>
+              <Link to="/dashboard" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/dashboard')}>📊 Dashboard</Link>
+              <Link to="/estoque" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/estoque')}>📦 Estoque</Link>
+              <Link to="/vendas" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/vendas')}>🛒 Vendas</Link>
+              <Link to="/clientes" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/clientes')}>👥 Clientes</Link>
+              <Link to="/despesas" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/despesas')}>💸 Despesas</Link>
+              <Link to="/cobrancas" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/cobrancas')}>📢 Cobranças</Link>
             </div>
             <div className="p-4 border-t border-gray-800 bg-gray-800/50 rounded-b-2xl">
               <div className="flex flex-col gap-3">
-                <span className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500/10 text-green-400 border border-green-500/20 text-sm font-bold rounded-xl w-full">
+                <span className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500/10 text-green-400 border border-green-500/20 text-sm font-bold rounded-xl w-full">
                   <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
                   Drive Sincronizado
                 </span>
-                <button onClick={handleLogout} className="px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-bold rounded-xl transition-colors w-full text-center border border-red-500/20">
+                <button onClick={handleLogout} className="px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-bold rounded-xl transition-colors w-full text-center border border-red-500/20">
                   Desconectar do Sistema
                 </button>
               </div>
