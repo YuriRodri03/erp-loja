@@ -19,13 +19,13 @@ function App() {
   return (
     <AppProvider>
       <BrowserRouter>
-        {/* Contêiner Master: Garante a altura total da tela e o fundo cinza padrão do sistema */}
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
+        {/* Contêiner Master: Adicionado overflow-x-hidden e max-w-full para matar o scroll horizontal fantasma */}
+        <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 overflow-x-hidden w-full max-w-full">
           
           <Navbar />
 
-          {/* O "flex-1 w-full" faz o conteúdo crescer o máximo possível, empurrando o footer para o final */}
-          <main className="flex-1 w-full flex flex-col">
+          {/* Adicionado max-w-full e relative aqui também */}
+          <main className="flex-1 w-full max-w-full flex flex-col relative">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -37,9 +37,9 @@ function App() {
             </Routes>
           </main>
 
-          {/* FOOTER CORPORATIVO (Rodapé) */}
-          <footer className="bg-white border-t border-gray-200 mt-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          {/* FOOTER CORPORATIVO (Rodapé) - Adicionado w-full */}
+          <footer className="bg-white border-t border-gray-200 mt-auto w-full">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
               <p className="text-sm text-gray-500 font-bold tracking-wide">
                 © {new Date().getFullYear()} Sistema de Gestão ERP. Todos os direitos reservados.
               </p>
