@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Fundo com gradiente arredondado (estilo ícone de app) -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" /> <!-- Blue 600 -->
+      <stop offset="100%" stop-color="#4f46e5" /> <!-- Indigo 600 -->
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" /> <!-- Indigo 100 -->
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Fundo do App Icon -->
+  <rect x="32" y="32" width="448" height="448" rx="100" ry="100" fill="url(#bgGradient)" />
+
+  <!-- Sombra do Ícone central -->
+  <g filter="url(#shadow)">
+    <!-- Carrinho de Compras -->
+    <path 
+      d="M144 384A32 32 0 1 0 176 416A32 32 0 0 0 144 384Z M368 384A32 32 0 1 0 400 416A32 32 0 0 0 368 384Z M423.75 144H137.66L112.59 43.76A16 16 0 0 0 97.06 32H48A16 16 0 0 0 48 64H83.82L133.09 261a48 48 0 0 0 46.59 35H352a48 48 0 0 0 45.45-32.33L438.93 155.67A16 16 0 0 0 423.75 144Z" 
+      fill="url(#iconGradient)" 
+    />
+    
+    <!-- Linha de Gráfico de Crescimento (Subindo do carrinho) -->
+    <path 
+      d="M192 192 L240 144 L288 176 L368 96" 
+      fill="none" 
+      stroke="#10b981" 
+      stroke-width="36" 
+      stroke-linecap="round" 
+      stroke-linejoin="round" 
+    />
+    
+    <!-- Ponto final do gráfico -->
+    <circle cx="368" cy="96" r="24" fill="#10b981" />
+  </g>
+</svg>
