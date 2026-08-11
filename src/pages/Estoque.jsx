@@ -6,7 +6,20 @@ import AlertaFlutuante from '../components/AlertaFlutuante';
 export default function Estoque() {
   const { produtos, setProdutos, tokenGoogle, idPlanilha, nomeLoja } = useContext(AppContext);
   
-  const estadoInicial = { nome: '', quantidade: '', preco: '' };
+  // Função de Máscara de Moeda (Visual)
+  const handleMascaraMoeda = (valor) => {
+    const v = valor.replace(/\D/g, '');
+    if (!v) return '';
+    return (Number(v) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // Função para limpar a máscara antes de salvar no DB
+  const converterMoedaParaNumero = (valorString) => {
+    if (!valorString) return 0;
+    return Number(valorString.replace(/\./g, '').replace(',', '.'));
+  };
+
+  const estadoInicial = { nome: '', quantidade: '', precoStr: '' };
   const [novoProduto, setNovoProduto] = useState(estadoInicial);
   const [editandoId, setEditandoId] = useState(null);
   
@@ -25,14 +38,20 @@ export default function Estoque() {
   };
 
   const handleChange = (e) => {
-    setNovoProduto({ ...novoProduto, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // Se for o campo de preço, aplica a máscara. Se não, salva normal.
+    if (name === 'precoStr') {
+       setNovoProduto({ ...novoProduto, precoStr: handleMascaraMoeda(value) });
+    } else {
+       setNovoProduto({ ...novoProduto, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     fecharAlerta();
     
-    if (!novoProduto.nome || !novoProduto.quantidade || !novoProduto.preco) {
+    if (!novoProduto.nome || !novoProduto.quantidade || !novoProduto.precoStr) {
       mostrarAlerta("Por favor, preencha todos os campos do produto.", "erro"); return;
     }
     if (!tokenGoogle || !idPlanilha) {
@@ -42,7 +61,7 @@ export default function Estoque() {
     setSalvando(true);
     const dataCadastro = new Date().toLocaleDateString('pt-BR');
     const qtd = Number(novoProduto.quantidade);
-    const preco = Number(novoProduto.preco);
+    const preco = converterMoedaParaNumero(novoProduto.precoStr);
 
     const arrayDadosSheet = [
       editandoId || Date.now(), 
@@ -83,7 +102,7 @@ export default function Estoque() {
     setNovoProduto({
       nome: produto.nome,
       quantidade: produto.quantidade,
-      preco: produto.preco
+      precoStr: Number(produto.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     });
     setEditandoId(produto.id);
     setMostrarFormulario(true);
@@ -169,7 +188,15 @@ export default function Estoque() {
 
             <div className="flex flex-col lg:col-span-1">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Preço Unitário (R$) <span className="text-red-500">*</span></label>
-              <input type="number" name="preco" step="0.01" min="0" value={novoProduto.preco} onChange={handleChange} placeholder="Ex: 15.50" className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" required />
+              <input 
+                type="text" 
+                name="precoStr" 
+                value={novoProduto.precoStr} 
+                onChange={handleChange} 
+                placeholder="0,00" 
+                className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm font-medium text-gray-800 placeholder-gray-400" 
+                required 
+              />
             </div>
           </div>
 

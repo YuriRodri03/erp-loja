@@ -147,14 +147,14 @@ export default function Despesas() {
   const totalPendente = despesas.reduce((acc, d) => d.status === 'PENDENTE' ? acc + d.valor : acc, 0);
 
   return (
-    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+    <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8 w-full overflow-hidden">
       
       {alerta.visivel && (
         <AlertaFlutuante mensagem={alerta.mensagem} tipo={alerta.tipo} onClose={fecharAlerta} />
       )}
 
       {/* HEADER PAGE */}
-      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-5 sm:gap-6">
+      <div className="bg-white p-5 sm:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col xl:flex-row justify-between xl:items-center gap-5 sm:gap-6 w-full">
         <div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Gestão de Despesas</h2>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Controle de contas e saídas da {nomeLoja}</p>
@@ -195,44 +195,44 @@ export default function Despesas() {
 
       {/* FORMULÁRIO DE DESPESA */}
       {mostrarFormulario && (
-        <form onSubmit={handleSubmit} className="bg-white p-5 sm:p-8 rounded-2xl border border-red-100 shadow-lg shadow-red-50 animate-fade-in-down">
+        <form onSubmit={handleSubmit} className="bg-white p-5 sm:p-8 rounded-2xl border border-red-100 shadow-lg shadow-red-50 animate-fade-in-down w-full overflow-hidden">
           <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-5 sm:mb-6 pb-3 border-b border-gray-100">
             {editandoId ? '✏️ Editando Despesa' : '💸 Lançar Nova Despesa'}
           </h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 w-full">
             <div className="flex flex-col lg:col-span-2">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Descrição <span className="text-red-500">*</span></label>
-              <input type="text" name="descricao" value={novaDespesa.descricao} onChange={handleChange} placeholder="Ex: Conta de Luz" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
+              <input type="text" name="descricao" value={novaDespesa.descricao} onChange={handleChange} placeholder="Ex: Conta de Luz" className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
             </div>
             
-            <div className="flex flex-col">
+            <div className="flex flex-col w-full">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Categoria</label>
-              <select name="categoria" value={novaDespesa.categoria} onChange={handleChange} className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
+              <select name="categoria" value={novaDespesa.categoria} onChange={handleChange} className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800">
                 {categorias.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
             
-            <div className="flex flex-col">
+            <div className="flex flex-col w-full">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Valor (R$) <span className="text-red-500">*</span></label>
-              <input type="number" name="valor" step="0.01" value={novaDespesa.valor} onChange={handleChange} placeholder="0.00" className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
+              <input type="number" name="valor" step="0.01" value={novaDespesa.valor} onChange={handleChange} placeholder="0.00" className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
             </div>
             
-            <div className="flex flex-col">
+            <div className="flex flex-col w-full">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Vencimento / Pagamento <span className="text-red-500">*</span></label>
-              <input type="date" name="data" value={novaDespesa.data} onChange={handleChange} className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
+              <input type="date" name="data" value={novaDespesa.data} onChange={handleChange} className="w-full px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-medium text-gray-800" required />
             </div>
             
-            <div className="flex flex-col lg:col-span-5 border-t border-gray-100 pt-4 sm:pt-5 mt-1 sm:mt-2">
+            <div className="flex flex-col lg:col-span-5 border-t border-gray-100 pt-4 sm:pt-5 mt-1 sm:mt-2 w-full">
               <label className="mb-1 sm:mb-2 text-xs sm:text-sm font-semibold text-gray-700">Status Financeiro</label>
-              <select name="status" value={novaDespesa.status} onChange={handleChange} className="px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-black text-gray-800 w-full sm:w-1/3">
+              <select name="status" value={novaDespesa.status} onChange={handleChange} className="w-full sm:w-1/3 px-4 py-2.5 sm:py-3 bg-gray-50/50 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition-all text-sm font-black text-gray-800">
                 <option value="PAGO">✅ PAGO (Já saiu do caixa)</option>
                 <option value="PENDENTE">⏳ PENDENTE (Contas a Pagar)</option>
               </select>
             </div>
           </div>
           
-          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3 pt-5 sm:pt-6 border-t border-gray-100">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row justify-end gap-3 pt-5 sm:pt-6 border-t border-gray-100 w-full">
             <button type="submit" disabled={salvando} className={`w-full sm:w-auto px-8 sm:px-10 py-3 sm:py-3.5 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${salvando ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:-translate-y-0.5'}`}>
               {salvando ? (
                 <><span className="animate-spin">⏳</span> Salvando...</>
@@ -245,8 +245,8 @@ export default function Despesas() {
       )}
 
       {/* TABELA DE DESPESAS */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto hide-scrollbar">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden w-full">
+        <div className="overflow-x-auto hide-scrollbar w-full">
           <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 font-bold">
@@ -286,8 +286,12 @@ export default function Despesas() {
                             <span className="hidden sm:inline">Dar Baixa</span><span className="sm:hidden">Baixa</span>
                           </button>
                         )}
-                        <button onClick={() => handleEditar(despesa)} disabled={processandoAcao} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 text-gray-700 hover:bg-gray-200 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50">✏️ <span className="hidden sm:inline">Editar</span></button>
-                        <button onClick={() => handleDeletar(despesa.id)} disabled={processandoAcao} className="px-2 sm:px-3 py-1.5 sm:py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50">✕</button>
+                        <button onClick={() => handleEditar(despesa)} disabled={processandoAcao} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 text-gray-700 hover:bg-gray-200 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50 border border-gray-200">
+                          ✏️ <span className="hidden sm:inline">Editar</span>
+                        </button>
+                        <button onClick={() => handleDeletar(despesa.id)} disabled={processandoAcao} className="px-2 sm:px-3 py-1.5 sm:py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50">
+                          ✕
+                        </button>
                       </div>
                     </td>
                   </tr>

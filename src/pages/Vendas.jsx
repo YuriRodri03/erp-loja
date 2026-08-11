@@ -20,6 +20,27 @@ export default function Vendas() {
     return `${ano}-${mes}-${dia}`;
   };
 
+  // MÁSCARAS DE VISUALIZAÇÃO
+  const mascaraCPF = (cpf) => {
+    if (!cpf) return '';
+    const limpo = cpf.replace(/\D/g, '');
+    if (limpo.length === 11) {
+      return limpo.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    }
+    return cpf;
+  };
+
+  const handleMascaraMoeda = (valor) => {
+    const v = valor.replace(/\D/g, '');
+    if (!v) return '';
+    return (Number(v) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const converterMoedaParaNumero = (valorString) => {
+    if (!valorString) return 0;
+    return Number(valorString.replace(/\./g, '').replace(',', '.'));
+  };
+
   const hoje = new Date();
   
   // =========================================================================
@@ -36,7 +57,7 @@ export default function Vendas() {
   const [carrinho, setCarrinho] = useState([]);
   const [prodAtual, setProdAtual] = useState('');
   const [qtdAtual, setQtdAtual] = useState('1');
-  const [precoAtual, setPrecoAtual] = useState('');
+  const [precoAtual, setPrecoAtual] = useState(''); 
   const [termoBuscaProduto, setTermoBuscaProduto] = useState('');
   const [mostrarDropdownProduto, setMostrarDropdownProduto] = useState(false);
 
@@ -45,7 +66,7 @@ export default function Vendas() {
   const [formaPagamento, setFormaPagamento] = useState('Dinheiro');
   const [parcelasCartao, setParcelasCartao] = useState('1');
   const [parcelasCrediario, setParcelasCrediario] = useState('1');
-  const [valorEntrada, setValorEntrada] = useState('');
+  const [valorEntrada, setValorEntrada] = useState(''); 
   const [dataPrimeiraParcela, setDataPrimeiraParcela] = useState('');
 
   // Filtros da Tabela de Histórico
@@ -71,7 +92,7 @@ export default function Vendas() {
   const selecionarCliente = (cliente) => {
     if (cliente) {
       setClienteSelecionado(cliente);
-      setTermoBuscaCliente(`${cliente.nome} (CPF: ${cliente.cpf || 'N/A'})`);
+      setTermoBuscaCliente(`${cliente.nome} (CPF: ${mascaraCPF(cliente.cpf) || 'N/A'})`);
     } else {
       setClienteSelecionado(null);
       setTermoBuscaCliente('');
@@ -86,7 +107,7 @@ export default function Vendas() {
   const selecionarProduto = (produto) => {
     if (produto) {
       setProdAtual(produto.nome);
-      setPrecoAtual(produto.preco.toString());
+      setPrecoAtual(Number(produto.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
       setTermoBuscaProduto(produto.nome);
     } else {
       setProdAtual(termoBuscaProduto);
@@ -103,19 +124,31 @@ export default function Vendas() {
       mostrarAlerta("Preencha o Nome, Qtd e Valor do produto para adicionar.", "erro"); return;
     }
     const q = Number(qtdAtual);
-    const p = Number(precoAtual);
+    const p = converterMoedaParaNumero(precoAtual);
     
     if (q <= 0 || p < 0) {
       mostrarAlerta("Quantidade ou preço inválidos.", "erro"); return;
     }
 
-    setCarrinho([...carrinho, {
-      idTemp: Date.now() + Math.random(),
-      produto: prodAtual,
-      quantidade: q,
-      valorUnitario: p,
-      total: q * p
-    }]);
+    // Verifica se já existe o mesmo produto com o mesmo preço no carrinho
+    const indexExistente = carrinho.findIndex(item => item.produto === prodAtual && item.valorUnitario === p);
+
+    if (indexExistente >= 0) {
+      // Apenas soma a quantidade no item já existente
+      const novoCarrinho = [...carrinho];
+      novoCarrinho[indexExistente].quantidade += q;
+      novoCarrinho[indexExistente].total = novoCarrinho[indexExistente].quantidade * p;
+      setCarrinho(novoCarrinho);
+    } else {
+      // Adiciona como nova linha no carrinho
+      setCarrinho([...carrinho, {
+        idTemp: Date.now() + Math.random(),
+        produto: prodAtual,
+        quantidade: q,
+        valorUnitario: p,
+        total: q * p
+      }]);
+    }
 
     setProdAtual('');
     setQtdAtual('1');
@@ -156,23 +189,33 @@ export default function Vendas() {
       mostrarAlerta("A data da venda é obrigatória.", "erro"); return;
     }
     
+    const valorEntradaNumerico = converterMoedaParaNumero(valorEntrada);
+
     if (formaPagamento === 'Crediário') {
       if (!clienteSelecionado) { mostrarAlerta("Vendas no Crediário exigem um Cliente vinculado!", "erro"); return; }
       if (!dataPrimeiraParcela) { mostrarAlerta("Defina a data de vencimento da 1ª parcela.", "erro"); return; }
-      if (Number(valorEntrada) < 0) { mostrarAlerta("O valor de entrada não pode ser negativo!", "erro"); return; }
-      if (Number(valorEntrada) >= totalVendaAtual) { mostrarAlerta("A entrada não pode quitar 100% da venda.", "erro"); return; }
+      if (valorEntradaNumerico < 0) { mostrarAlerta("O valor de entrada não pode ser negativo!", "erro"); return; }
+      if (valorEntradaNumerico >= totalVendaAtual) { mostrarAlerta("A entrada não pode quitar 100% da venda.", "erro"); return; }
     }
 
     if (!tokenGoogle || !idPlanilha) { mostrarAlerta("Acesso negado: Faça login com o Google.", "erro"); return; }
 
     setSalvando(true);
 
-    // Validação de Estoque (Avisar se vai negativar)
+    // Agrupa a quantidade total que será abatida por Produto (Evita erro de Closure do React)
+    const resumoEstoqueParaAbater = {};
+    carrinho.forEach(item => {
+        if(!resumoEstoqueParaAbater[item.produto]) resumoEstoqueParaAbater[item.produto] = 0;
+        resumoEstoqueParaAbater[item.produto] += item.quantidade;
+    });
+
     if (!editandoId) {
-        for (let item of carrinho) {
-            const prodEstoque = produtos.find(p => p.nome === item.produto);
-            if (prodEstoque && Number(prodEstoque.quantidade) < item.quantidade) {
-                if (!window.confirm(`Atenção: Só restam ${prodEstoque.quantidade}x de "${item.produto}". Prosseguir e negativar o estoque?`)) {
+        for (let nomeProd in resumoEstoqueParaAbater) {
+            const prodEstoque = produtos.find(p => p.nome === nomeProd);
+            const qtdRequerida = resumoEstoqueParaAbater[nomeProd];
+            
+            if (prodEstoque && Number(prodEstoque.quantidade) < qtdRequerida) {
+                if (!window.confirm(`Atenção: Só restam ${prodEstoque.quantidade}x de "${nomeProd}". Prosseguir e negativar o estoque?`)) {
                     setSalvando(false);
                     return;
                 }
@@ -180,72 +223,74 @@ export default function Vendas() {
         }
     }
 
-    // Se estiver editando, devolvemos o estoque da venda antiga primeiro
     if (editandoId) {
       const vendaAntiga = vendas.find(v => v.id === editandoId);
-      if (vendaAntiga) await atualizarEstoque(vendaAntiga.produto, Number(vendaAntiga.quantidade));
+      if (vendaAntiga) {
+          console.warn("Aviso: Edição de venda agrupada não ajusta automaticamente o estoque antigo.");
+      }
     }
 
-    const novosRegistros = [];
-    let primeiroItemAtualizado = false;
+    // ==========================================
+    // MAGIA DO AGRUPAMENTO (CARRINHO UNIFICADO)
+    // ==========================================
+    const nomeProdutoAgrupado = carrinho.map(item => `${item.quantidade}x ${item.produto}`).join(' | ');
+    const quantidadeAgrupada = carrinho.length === 1 ? carrinho[0].quantidade : 1; 
+    const valorUnitarioAgrupado = carrinho.length === 1 ? carrinho[0].valorUnitario : totalVendaAtual;
+    const totalAgrupado = totalVendaAtual;
 
-    // Salva cada item do carrinho como uma linha separada no banco (rateando a entrada)
-    for (let i = 0; i < carrinho.length; i++) {
-        const item = carrinho[i];
-        const pesoNoCarrinho = totalVendaAtual > 0 ? (item.total / totalVendaAtual) : 0;
-        const entradaRateada = Number(valorEntrada || 0) * pesoNoCarrinho;
-        
-        const numParcelas = formaPagamento === 'Cartão' ? parcelasCartao : (formaPagamento === 'Crediário' ? parcelasCrediario : '-');
-        const pago = formaPagamento === 'Crediário' ? 'NÃO' : 'SIM';
-        
-        let idParaSalvar = (editandoId && !primeiroItemAtualizado) ? editandoId : Date.now() + i + Math.floor(Math.random()*1000);
-        if (idParaSalvar === editandoId) primeiroItemAtualizado = true;
+    const numParcelas = formaPagamento === 'Cartão' ? parcelasCartao : (formaPagamento === 'Crediário' ? parcelasCrediario : '-');
+    const pago = formaPagamento === 'Crediário' ? 'NÃO' : 'SIM';
+    
+    const idParaSalvar = editandoId || Date.now();
 
-        const arrayDadosSheet = [
-            idParaSalvar,
-            formataDataBrasil(dataVenda),
-            item.produto,
-            item.quantidade,
-            item.valorUnitario,
-            item.total,
-            clienteSelecionado ? clienteSelecionado.id : 'AVULSO',
-            formaPagamento,
-            numParcelas,
-            formaPagamento === 'Crediário' ? entradaRateada : 0,
-            formaPagamento === 'Crediário' ? formataDataBrasil(dataPrimeiraParcela) : '-',
-            pago
-        ];
-
-        if (idParaSalvar === editandoId) {
-            await editarLinha(tokenGoogle, idPlanilha, 'Vendas', idParaSalvar, arrayDadosSheet);
-        } else {
-            await adicionarLinha(tokenGoogle, idPlanilha, 'Vendas', arrayDadosSheet);
-        }
-        
-        // Debita o estoque do novo item
-        await atualizarEstoque(item.produto, -item.quantidade);
-
-        novosRegistros.push({
-            id: idParaSalvar,
-            data: formataDataBrasil(dataVenda),
-            produto: item.produto,
-            quantidade: item.quantidade,
-            valorUnitario: item.valorUnitario,
-            total: item.total,
-            clienteId: clienteSelecionado ? clienteSelecionado.id : 'AVULSO',
-            formaPagamento,
-            parcelasCartao: numParcelas,
-            valorEntrada: formaPagamento === 'Crediário' ? entradaRateada : 0,
-            dataPrimeiraParcela: formaPagamento === 'Crediário' ? formataDataBrasil(dataPrimeiraParcela) : '-',
-            statusPago: pago
-        });
-    }
+    const arrayDadosSheet = [
+        idParaSalvar,
+        formataDataBrasil(dataVenda),
+        nomeProdutoAgrupado,
+        quantidadeAgrupada,
+        valorUnitarioAgrupado,
+        totalAgrupado,
+        clienteSelecionado ? clienteSelecionado.id : 'AVULSO',
+        formaPagamento,
+        numParcelas,
+        formaPagamento === 'Crediário' ? valorEntradaNumerico : 0,
+        formaPagamento === 'Crediário' ? formataDataBrasil(dataPrimeiraParcela) : '-',
+        pago
+    ];
 
     if (editandoId) {
-        setVendas([...vendas.filter(v => v.id !== editandoId), ...novosRegistros]);
+        await editarLinha(tokenGoogle, idPlanilha, 'Vendas', idParaSalvar, arrayDadosSheet);
+    } else {
+        await adicionarLinha(tokenGoogle, idPlanilha, 'Vendas', arrayDadosSheet);
+    }
+    
+    // Agora debita o estoque de forma agrupada e segura (1 request por produto total)
+    if (!editandoId) {
+        for (let nomeProd in resumoEstoqueParaAbater) {
+            await atualizarEstoque(nomeProd, -resumoEstoqueParaAbater[nomeProd]);
+        }
+    }
+
+    const novoRegistro = {
+        id: idParaSalvar,
+        data: formataDataBrasil(dataVenda),
+        produto: nomeProdutoAgrupado,
+        quantidade: quantidadeAgrupada,
+        valorUnitario: valorUnitarioAgrupado,
+        total: totalAgrupado,
+        clienteId: clienteSelecionado ? clienteSelecionado.id : 'AVULSO',
+        formaPagamento,
+        parcelasCartao: numParcelas,
+        valorEntrada: formaPagamento === 'Crediário' ? valorEntradaNumerico : 0,
+        dataPrimeiraParcela: formaPagamento === 'Crediário' ? formataDataBrasil(dataPrimeiraParcela) : '-',
+        statusPago: pago
+    };
+
+    if (editandoId) {
+        setVendas([...vendas.filter(v => v.id !== editandoId), novoRegistro]);
         mostrarAlerta("Venda atualizada com sucesso!");
     } else {
-        setVendas([...vendas, ...novosRegistros]);
+        setVendas([...vendas, novoRegistro]);
         mostrarAlerta("Venda registrada e estoque atualizado!");
     }
     
@@ -256,23 +301,34 @@ export default function Vendas() {
   const handleEditar = (venda) => {
     const clienteObj = clientes.find(c => c.id == venda.clienteId);
     setClienteSelecionado(clienteObj || null);
-    setTermoBuscaCliente(clienteObj ? `${clienteObj.nome} (CPF: ${clienteObj.cpf || 'N/A'})` : '');
+    setTermoBuscaCliente(clienteObj ? `${clienteObj.nome} (CPF: ${mascaraCPF(clienteObj.cpf) || 'N/A'})` : '');
     
-    setCarrinho([{
-      idTemp: venda.id,
-      produto: venda.produto,
-      quantidade: Number(venda.quantidade),
-      valorUnitario: Number(venda.valorUnitario),
-      total: Number(venda.quantidade) * Number(venda.valorUnitario)
-    }]);
+    const isAgrupada = venda.produto.includes('|');
+    if (isAgrupada) {
+       setCarrinho([{
+         idTemp: venda.id,
+         produto: "Pacote Agrupado (Não editável unitariamente)",
+         quantidade: 1,
+         valorUnitario: Number(venda.total),
+         total: Number(venda.total)
+       }]);
+    } else {
+       const nomeLimpo = venda.produto.replace(/^\d+x\s/, '');
+       setCarrinho([{
+         idTemp: venda.id,
+         produto: nomeLimpo,
+         quantidade: Number(venda.quantidade),
+         valorUnitario: Number(venda.valorUnitario),
+         total: Number(venda.quantidade) * Number(venda.valorUnitario)
+       }]);
+    }
 
     setDataVenda(formataDataIso(venda.data));
     setFormaPagamento(venda.formaPagamento);
     setParcelasCartao(venda.formaPagamento === 'Cartão' ? venda.parcelasCartao : '1');
     setParcelasCrediario(venda.formaPagamento === 'Crediário' ? venda.parcelasCartao : '1');
     
-    // Se a venda tem entrada, como era só 1 item, a entradaRateada = entradaTotal
-    setValorEntrada(venda.valorEntrada || '');
+    setValorEntrada(venda.valorEntrada ? Number(venda.valorEntrada).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '');
     setDataPrimeiraParcela(formataDataIso(venda.dataPrimeiraParcela));
     
     setEditandoId(venda.id);
@@ -287,8 +343,9 @@ export default function Vendas() {
       
       if (sucesso) {
         setVendas(vendas.filter(v => v.id !== id));
-        if (vendaExcluida && window.confirm(`Deseja devolver as ${vendaExcluida.quantidade} unidades de "${vendaExcluida.produto}" ao Estoque?`)) {
-            await atualizarEstoque(vendaExcluida.produto, Number(vendaExcluida.quantidade));
+        if (vendaExcluida && !vendaExcluida.produto.includes('|') && window.confirm(`Deseja devolver as ${vendaExcluida.quantidade} unidades ao Estoque?`)) {
+            const nomeLimpo = vendaExcluida.produto.replace(/^\d+x\s/, '');
+            await atualizarEstoque(nomeLimpo, Number(vendaExcluida.quantidade));
             mostrarAlerta("Venda removida e itens devolvidos ao estoque!");
         } else {
             mostrarAlerta("Venda removida definitivamente.");
@@ -341,9 +398,38 @@ export default function Vendas() {
   }, 0);
 
   // Variáveis para resumo do Crediário
-  const entradaAtual = Number(valorEntrada) || 0;
+  const entradaAtual = converterMoedaParaNumero(valorEntrada);
   const parcelasCrediarioAtual = Number(parcelasCrediario) || 1;
-  const valorParcelaAtual = totalVendaAtual > entradaAtual ? (totalVendaAtual - entradaAtual) / parcelasCrediarioAtual : 0;
+  const valorParcelaAtual = totalVendaAtual > entradaAtual 
+    ? Math.round(((totalVendaAtual - entradaAtual) / parcelasCrediarioAtual) * 100) / 100 
+    : 0;
+
+  // FORMATADOR DE APRESENTAÇÃO DA STRING DO BANCO
+  const formatarVisualizacaoProduto = (produtoString, quantidade, valorUnit) => {
+      if (produtoString.includes('|')) {
+          const itens = produtoString.split('|').map(i => i.trim());
+          return (
+              <div className="flex flex-col">
+                  <span className="font-extrabold text-gray-900 text-sm">Venda Agrupada</span>
+                  <div className="mt-1 flex flex-col gap-0.5">
+                      {itens.map((item, idx) => (
+                          <span key={idx} className="text-[11px] text-gray-500 font-medium">↳ {item}</span>
+                      ))}
+                  </div>
+              </div>
+          );
+      }
+      
+      const nomeLimpo = produtoString.replace(/^\d+x\s/, '');
+      return (
+          <div className="flex flex-col">
+              <span className="font-extrabold text-gray-900 text-sm sm:text-base truncate max-w-[200px]">{nomeLimpo}</span>
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-500 mt-0.5">
+                  Qtd: {quantidade} • Unit: R$ {Number(valorUnit).toFixed(2)}
+              </span>
+          </div>
+      );
+  };
 
   return (
     <div className="font-sans relative max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8 w-full overflow-hidden">
@@ -374,16 +460,14 @@ export default function Vendas() {
           )}
         </div>
 
-        {/* ========================================== */}
-        {/* SEÇÃO 1: CLIENTE                           */}
-        {/* ========================================== */}
+        {/* SEÇÃO 1: CLIENTE */}
         <h4 className="text-sm sm:text-base font-bold text-gray-800 mb-3 bg-gray-50 p-2 rounded-lg inline-block px-4">1. Identificação do Cliente</h4>
         <div className="mb-8 w-full">
           {clienteSelecionado ? (
             <div className="flex justify-between items-center bg-blue-50/50 p-4 rounded-xl border border-blue-100 w-full sm:w-1/2">
                <div>
                   <p className="font-extrabold text-blue-900">{clienteSelecionado.nome}</p>
-                  <p className="text-xs font-medium text-blue-700 mt-1">CPF: {clienteSelecionado.cpf || 'Não informado'}</p>
+                  <p className="text-xs font-medium text-blue-700 mt-1">CPF: {mascaraCPF(clienteSelecionado.cpf) || 'Não informado'}</p>
                </div>
                <button type="button" onClick={() => setClienteSelecionado(null)} className="text-xs font-bold px-3 py-1.5 bg-white border border-blue-200 text-red-500 rounded-lg shadow-sm hover:bg-red-50 transition-colors">
                   Remover
@@ -411,7 +495,7 @@ export default function Vendas() {
                   {clientesFiltrados.map(c => (
                     <li key={c.id} className="px-5 py-3 hover:bg-blue-50 cursor-pointer transition-colors" onClick={() => selecionarCliente(c)}>
                       <div className="font-bold text-gray-800 text-sm truncate">{c.nome}</div>
-                      <div className="text-[11px] text-gray-500 mt-0.5">CPF: {c.cpf || 'N/A'}</div>
+                      <div className="text-[11px] text-gray-500 mt-0.5">CPF: {mascaraCPF(c.cpf) || 'N/A'}</div>
                     </li>
                   ))}
                 </ul>
@@ -420,12 +504,9 @@ export default function Vendas() {
           )}
         </div>
 
-        {/* ========================================== */}
-        {/* SEÇÃO 2: CARRINHO                          */}
-        {/* ========================================== */}
+        {/* SEÇÃO 2: CARRINHO */}
         <h4 className="text-sm sm:text-base font-bold text-gray-800 mb-3 bg-gray-50 p-2 rounded-lg inline-block px-4">2. Produtos do Carrinho</h4>
         
-        {/* Só permite adicionar novos produtos se não estiver no modo de edição estrita (para evitar bagunçar histórico unificado) */}
         {!editandoId && (
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-4 w-full bg-blue-50/30 p-4 rounded-xl border border-blue-50">
             <div className="sm:col-span-6 relative w-full">
@@ -467,7 +548,13 @@ export default function Vendas() {
             
             <div className="sm:col-span-2 w-full">
                 <label className="mb-1 text-xs font-semibold text-gray-600">Unit. (R$)</label>
-                <input type="number" step="0.01" min="0" value={precoAtual} onChange={(e)=>setPrecoAtual(e.target.value)} className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 text-sm font-medium" />
+                <input 
+                  type="text" 
+                  value={precoAtual} 
+                  onChange={(e)=>setPrecoAtual(handleMascaraMoeda(e.target.value))} 
+                  placeholder="0,00"
+                  className="w-full px-4 py-2.5 bg-white rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 text-sm font-medium" 
+                />
             </div>
 
             <div className="sm:col-span-2 flex items-end w-full">
@@ -478,7 +565,6 @@ export default function Vendas() {
             </div>
         )}
 
-        {/* Lista de Itens no Carrinho */}
         <div className="mb-8 w-full">
           {carrinho.length === 0 ? (
              <div className="p-8 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
@@ -514,9 +600,7 @@ export default function Vendas() {
           )}
         </div>
 
-        {/* ========================================== */}
-        {/* SEÇÃO 3: PAGAMENTO                         */}
-        {/* ========================================== */}
+        {/* SEÇÃO 3: PAGAMENTO */}
         <h4 className="text-sm sm:text-base font-bold text-gray-800 mb-3 bg-gray-50 p-2 rounded-lg inline-block px-4">3. Condições de Pagamento</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 w-full">
           
@@ -554,7 +638,13 @@ export default function Vendas() {
               </div>
               <div className="flex flex-col w-full">
                 <label className="mb-2 text-xs sm:text-sm font-semibold text-gray-700">Entrada (R$)</label>
-                <input type="number" step="0.01" min="0" value={valorEntrada} onChange={(e)=>setValorEntrada(e.target.value)} placeholder="0.00" className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 text-sm font-medium" />
+                <input 
+                  type="text" 
+                  value={valorEntrada} 
+                  onChange={(e)=>setValorEntrada(handleMascaraMoeda(e.target.value))} 
+                  placeholder="0,00" 
+                  className="w-full px-4 py-3 bg-yellow-50/50 rounded-xl border border-yellow-200 text-sm font-medium" 
+                />
               </div>
               <div className="flex flex-col sm:col-span-2 lg:col-span-1 w-full">
                 <label className="mb-2 text-xs sm:text-sm font-semibold text-gray-700">Venc. 1ª Parcela <span className="text-red-500">*</span></label>
@@ -596,9 +686,7 @@ export default function Vendas() {
         </div>
       </form>
 
-      {/* ========================================================================================= */}
-      {/* HISTÓRICO DE VENDAS COM FILTRO */}
-      {/* ========================================================================================= */}
+      {/* HISTÓRICO DE VENDAS */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-10 sm:mt-12 gap-4 w-full">
         <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">Histórico de Saídas</h3>
         
@@ -626,59 +714,55 @@ export default function Vendas() {
           <table className="min-w-full text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-[10px] sm:text-xs uppercase tracking-widest text-gray-500 font-bold">
-                <th className="p-4 sm:p-5">Data</th>
-                <th className="p-4 sm:p-5">Produto</th>
-                <th className="p-4 sm:p-5 hidden md:table-cell">Cliente</th>
-                <th className="p-4 sm:p-5 text-center">Pagamento</th>
-                <th className="p-4 sm:p-5 text-right">Total</th>
-                <th className="p-4 sm:p-5 text-center">Ações</th>
+                <th className="p-4 sm:p-6 w-24">Data</th>
+                <th className="p-4 sm:p-6">Detalhes do Pedido</th>
+                <th className="p-4 sm:p-6 hidden md:table-cell">Cliente</th>
+                <th className="p-4 sm:p-6 text-center">Forma de Pag.</th>
+                <th className="p-4 sm:p-6 text-right w-32">Total</th>
+                <th className="p-4 sm:p-6 text-center w-28">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {vendasFiltradasDaTabela.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="p-8 sm:p-12 text-center text-gray-400 font-medium text-sm sm:text-base">
-                    Nenhuma venda encontrada no filtro de {filtroMes}/{filtroAno}.
+                    Nenhuma venda encontrada no filtro selecionado.
                   </td>
                 </tr>
               ) : (
                 vendasFiltradasDaTabela.map((venda) => (
-                  <tr key={venda.id} className="hover:bg-green-50/40 transition-colors group">
-                    <td className="p-4 sm:p-5 text-gray-500 text-xs sm:text-sm font-semibold">{venda.data}</td>
-                    <td className="p-4 sm:p-5">
-                      <p className="font-extrabold text-gray-900 text-sm sm:text-base truncate max-w-[120px] sm:max-w-[200px]">{venda.produto}</p>
-                      <p className="text-[10px] sm:text-xs font-semibold text-gray-500 mt-0.5 sm:mt-1">{venda.quantidade}x R$ {Number(venda.valorUnitario).toFixed(2)}</p>
-                    </td>
-                    <td className="p-4 sm:p-5 text-gray-700 hidden md:table-cell font-medium text-sm truncate max-w-[150px]">{getNomeCliente(venda.clienteId)}</td>
+                  <tr key={venda.id} className="hover:bg-green-50/40 transition-colors group align-top">
+                    <td className="p-4 sm:p-6 text-gray-500 text-xs sm:text-sm font-semibold pt-5">{venda.data}</td>
                     
-                    <td className="p-4 sm:p-5 text-center">
-                      <span className={`px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-lg tracking-wide ${venda.formaPagamento === 'Crediário' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                    <td className="p-4 sm:p-6">
+                      {formatarVisualizacaoProduto(venda.produto, venda.quantidade, venda.valorUnitario)}
+                    </td>
+                    
+                    <td className="p-4 sm:p-6 text-gray-700 hidden md:table-cell font-medium text-sm truncate max-w-[150px] pt-5">
+                      {getNomeCliente(venda.clienteId)}
+                    </td>
+                    
+                    <td className="p-4 sm:p-6 text-center pt-5">
+                      <span className={`inline-block px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg tracking-wide ${venda.formaPagamento === 'Crediário' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
                         {venda.formaPagamento} {(venda.formaPagamento === 'Cartão' || venda.formaPagamento === 'Crediário') ? `(${venda.parcelasCartao || 1}x)` : ''}
                       </span>
                       
-                      {venda.statusPago === 'NÃO' && <span className="block mt-1.5 sm:mt-2 text-[9px] sm:text-[10px] font-bold text-red-600 uppercase tracking-widest">PENDENTE</span>}
-                      
                       {venda.formaPagamento === 'Crediário' && (
-                        <div className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-gray-600 bg-gray-50 p-2 sm:p-2.5 rounded-lg border border-gray-100 w-full min-w-[120px] sm:min-w-[140px] shadow-sm text-left">
-                          <div className="flex justify-between items-center mb-1 sm:mb-1.5">
-                            <span className="font-medium">Entrada:</span>
-                            <span className="font-black text-gray-800">R$ {Number(venda.valorEntrada || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">1ª Parc:</span>
-                            <span className="font-bold text-gray-500 bg-white px-1 sm:px-1.5 py-0.5 rounded border border-gray-200">{venda.dataPrimeiraParcela}</span>
-                          </div>
+                        <div className="mt-2 text-[10px] text-gray-500 font-medium">
+                          Entrada: <strong className="text-gray-800">R$ {Number(venda.valorEntrada || 0).toFixed(2)}</strong><br/>
+                          Venc. 1ª: <strong className="text-gray-800">{venda.dataPrimeiraParcela}</strong>
                         </div>
                       )}
+                      {venda.statusPago === 'NÃO' && <span className="inline-block mt-2 text-[9px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded uppercase tracking-widest">A Receber</span>}
                     </td>
                     
-                    <td className="p-4 sm:p-5 font-black text-gray-900 text-right text-base sm:text-lg">
-                      R$ {(venda.quantidade * venda.valorUnitario).toFixed(2)}
+                    <td className="p-4 sm:p-6 font-black text-gray-900 text-right text-base sm:text-lg pt-5">
+                      R$ {Number(venda.total).toFixed(2)}
                     </td>
                     
-                    <td className="p-4 sm:p-5 text-center space-x-1 sm:space-x-2">
-                      <div className="flex justify-center items-center h-full pt-1 sm:pt-2">
-                        <button onClick={() => handleEditar(venda)} disabled={processandoAcao} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50" title="Editar Venda">✏️ <span className="hidden sm:inline">Editar</span></button>
+                    <td className="p-4 sm:p-6 text-center space-x-1 sm:space-x-2 pt-4">
+                      <div className="flex justify-center items-center h-full">
+                        <button onClick={() => handleEditar(venda)} disabled={processandoAcao} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-lg text-[10px] sm:text-xs font-bold transition-colors disabled:opacity-50" title="Editar Venda">✏️ <span className="hidden lg:inline">Editar</span></button>
                         <button onClick={() => handleDeletar(venda.id)} disabled={processandoAcao} className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-red-400 hover:text-red-700 hover:bg-red-50 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 ml-1 sm:ml-2" title="Excluir Venda">✕</button>
                       </div>
                     </td>

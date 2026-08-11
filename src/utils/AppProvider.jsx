@@ -106,7 +106,7 @@ export function AppProvider({ children }) {
       setProdutos([]);
       setVendas([]);
       setClientes([]);
-      setDespesas([]); // <--- NOVO
+      setDespesas([]);
     }
   }, [tokenGoogle, idPlanilha]);
 
