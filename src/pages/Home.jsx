@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AppContext } from '../utils/AppProvider';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -7,10 +7,11 @@ import { buscarPlanilhaExistente } from '../services/googleSheets';
 export default function Home() {
   const { tokenGoogle, setTokenGoogle, setIdPlanilha, setNomeLoja } = useContext(AppContext);
 
-  if (tokenGoogle) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  // Estados para o Modal de Termos
+  const [mostrarTermos, setMostrarTermos] = useState(false);
+  const [termosAceitos, setTermosAceitos] = useState(false);
 
+  // O Hook useGoogleLogin PRECISA ficar antes de qualquer 'return' (Regra do React)
   const fazerLogin = useGoogleLogin({
     onSuccess: async (resposta) => {
       const token = resposta.access_token;
@@ -37,6 +38,21 @@ export default function Home() {
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets'
   });
 
+  // Só depois de declarar todos os Hooks, nós fazemos o return antecipado!
+  if (tokenGoogle) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Função que o botão principal da Home chama primeiro
+  const iniciarProcessoDeLogin = () => {
+    setMostrarTermos(true);
+  };
+
+  const handleAceitarEProsseguir = () => {
+    setMostrarTermos(false);
+    fazerLogin(); // Chama a janela do Google
+  };
+
   return (
     <div className="relative bg-white overflow-hidden font-sans min-h-[calc(100vh-64px)] flex flex-col items-center justify-center">
       
@@ -62,7 +78,7 @@ export default function Home() {
 
           <div className="flex flex-col items-center gap-3 sm:gap-4 animate-fade-in-down w-full px-4 sm:px-0" style={{ animationDelay: '300ms' }}>
             <button 
-              onClick={() => fazerLogin()}
+              onClick={iniciarProcessoDeLogin}
               className="w-full sm:w-auto px-6 sm:px-8 py-4 bg-gray-900 hover:bg-black text-white font-bold text-base sm:text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3"
             >
               <svg className="w-5 h-5 bg-white rounded-full flex-shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -111,6 +127,91 @@ export default function Home() {
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL DE TERMOS DE SERVIÇO E PRIVACIDADE */}
+      {/* ========================================================================= */}
+      {mostrarTermos && (
+        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-down border border-gray-100">
+            
+            <div className="p-6 sm:p-8 border-b border-gray-100 bg-white">
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Privacidade & Nuvem</h2>
+              <p className="text-gray-500 text-sm sm:text-base font-medium mt-2">
+                Como este sistema gerencia os dados da sua loja.
+              </p>
+            </div>
+
+            <div className="p-6 sm:p-8 overflow-y-auto bg-gray-50/50 flex-1 space-y-5 text-sm sm:text-base text-gray-600 font-medium">
+              
+              <div className="flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0 mt-1">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-base mb-1">Seus dados são 100% seus</h4>
+                  <p>Este aplicativo não possui um banco de dados central (servidor). Todas as informações cadastradas (clientes, vendas, estoque) são gravadas <strong>exclusivamente na sua própria conta do Google Drive</strong>, em formato de planilha.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0 mt-1">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-base mb-1">Permissões Solicitadas</h4>
+                  <p>Para o sistema funcionar, você precisará autorizar que ele crie e edite planilhas dentro do seu Google Drive. <strong>O sistema não terá acesso a outras fotos, e-mails ou documentos pessoais.</strong></p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 flex-shrink-0 mt-1">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-gray-900 text-base mb-1">Cuidado com Edições Manuais</h4>
+                  <p>Uma planilha será criada no seu Google Drive chamada "Base de Dados - Sua Loja". Evite abrir esse arquivo diretamente pelo Excel ou Google Sheets para modificar as linhas, pois isso pode corromper as máscaras financeiras do sistema.</p>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="p-6 sm:p-8 bg-white border-t border-gray-100">
+              <label className="flex items-start gap-3 cursor-pointer group mb-6">
+                <div className="relative flex items-start pt-0.5">
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    checked={termosAceitos}
+                    onChange={(e) => setTermosAceitos(e.target.checked)}
+                  />
+                </div>
+                <span className="text-sm font-bold text-gray-700 select-none group-hover:text-gray-900 transition-colors leading-snug">
+                  Estou ciente de que meus dados serão armazenados na minha própria conta Google e compreendo as permissões solicitadas.
+                </span>
+              </label>
+
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4">
+                <button 
+                  onClick={() => setMostrarTermos(false)} 
+                  className="w-full sm:w-auto px-6 py-3.5 text-gray-500 font-bold text-sm hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleAceitarEProsseguir} 
+                  disabled={!termosAceitos}
+                  className={`w-full sm:w-auto px-8 py-3.5 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${termosAceitos ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:-translate-y-0.5' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                >
+                  Continuar para o Login
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
