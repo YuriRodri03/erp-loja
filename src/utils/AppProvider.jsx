@@ -8,15 +8,16 @@ export function AppProvider({ children }) {
   const [idPlanilha, setIdPlanilha] = useState(localStorage.getItem('idPlanilha'));
   const [nomeLoja, setNomeLoja] = useState(localStorage.getItem('nomeLoja') || 'Minha Loja');
 
+  // NOVO: Estado para saber se o e-mail logado é do dono do SaaS
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true');
+
   const [produtos, setProdutos] = useState([]);
   const [vendas, setVendas] = useState([]);
   const [clientes, setClientes] = useState([]);
-  
-  // NOVO: Estado para as Despesas
   const [despesas, setDespesas] = useState([]);
 
   // =========================================================================
-  // SINCRONIZAÇÃO AUTOMÁTICA
+  // SINCRONIZAÇÃO AUTOMÁTICA DO GOOGLE SHEETS
   // =========================================================================
   useEffect(() => {
     if (tokenGoogle && idPlanilha) {
@@ -29,7 +30,7 @@ export function AppProvider({ children }) {
             lerAba(tokenGoogle, idPlanilha, 'Estoque'),
             lerAba(tokenGoogle, idPlanilha, 'Vendas'),
             lerAba(tokenGoogle, idPlanilha, 'Clientes'),
-            lerAba(tokenGoogle, idPlanilha, 'Despesas') // <--- NOVO
+            lerAba(tokenGoogle, idPlanilha, 'Despesas')
           ]);
 
           // 1. Processa o Estoque
@@ -80,7 +81,7 @@ export function AppProvider({ children }) {
             setClientes(clientesFormatados);
           }
 
-          // 4. Processa as Despesas (NOVO)
+          // 4. Processa as Despesas
           // Colunas: 0:ID, 1:Data, 2:Descricao, 3:Categoria, 4:Valor, 5:Status
           if (linhasDespesas && linhasDespesas.length > 0) {
             const despesasFormatadas = linhasDespesas.map(linha => ({
@@ -107,6 +108,7 @@ export function AppProvider({ children }) {
       setVendas([]);
       setClientes([]);
       setDespesas([]);
+      setIsAdmin(false); // Também removemos o status de Admin por segurança ao sair
     }
   }, [tokenGoogle, idPlanilha]);
 
@@ -115,6 +117,7 @@ export function AppProvider({ children }) {
       tokenGoogle, setTokenGoogle, 
       idPlanilha, setIdPlanilha,
       nomeLoja, setNomeLoja, 
+      isAdmin, setIsAdmin,
       produtos, setProdutos,
       vendas, setVendas,
       clientes, setClientes,

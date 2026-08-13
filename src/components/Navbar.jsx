@@ -12,7 +12,8 @@ export default function Navbar() {
   const { 
     tokenGoogle, setTokenGoogle, 
     idPlanilha, setIdPlanilha,
-    nomeLoja, setNomeLoja
+    nomeLoja, setNomeLoja,
+    isAdmin, setIsAdmin 
   } = useContext(AppContext);
 
   const [inputNomeLoja, setInputNomeLoja] = useState('');
@@ -24,28 +25,72 @@ export default function Navbar() {
     onSuccess: async (resposta) => {
       const token = resposta.access_token;
       
-      setTokenGoogle(token);
-      localStorage.setItem('tokenGoogle', token);
-      
-      let planilhaAtual = localStorage.getItem('idPlanilha');
-      
-      if (!planilhaAtual) {
-        setBuscandoNoDrive(true);
-        const planilhaEncontrada = await buscarPlanilhaExistente(token);
-        
-        if (planilhaEncontrada) {
-          setIdPlanilha(planilhaEncontrada.id);
-          localStorage.setItem('idPlanilha', planilhaEncontrada.id);
-          
-          const nomeExtraido = planilhaEncontrada.name.replace('Base de Dados - ', '');
-          setNomeLoja(nomeExtraido);
-          localStorage.setItem('nomeLoja', nomeExtraido);
+      try {
+        const resGoogle = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const dadosGoogle = await resGoogle.json();
+        const emailUsuario = dadosGoogle.email;
+
+        const resBackend = await fetch('http://localhost:3001/api/auth/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailUsuario })
+        });
+        const dadosConta = await resBackend.json();
+
+        // 🎉 ALERTA DE 30 DIAS GRÁTIS - Aparece primeiro, antes de qualquer navegação
+        if (dadosConta.mensagem === 'Teste de 30 dias iniciado!') {
+            alert("Parabéns! O seu teste grátis de 30 dias começou agora. Crie sua base de dados a seguir e aproveite o sistema completo!");
         }
-        setBuscandoNoDrive(false);
+
+        localStorage.setItem('tokenGoogle', token);
+        if (dadosConta.is_admin) {
+            localStorage.setItem('isAdmin', 'true');
+            setIsAdmin(true);
+        } else {
+            localStorage.setItem('isAdmin', 'false');
+            setIsAdmin(false);
+        }
+
+        // Se estiver inativo, vai pra home exibir o Modal de Pagamento
+        if (dadosConta.status_pagamento === 'inativo') {
+            navigate('/');
+            return; 
+        }
+
+        // Se chegou aqui, ele tá ativo (seja dono, assinante antigo, ou nos 30 dias)
+        let planilhaAtual = localStorage.getItem('idPlanilha');
+        if (!planilhaAtual) {
+          setBuscandoNoDrive(true);
+          const planilhaEncontrada = await buscarPlanilhaExistente(token);
+          
+          if (planilhaEncontrada) {
+            setIdPlanilha(planilhaEncontrada.id);
+            localStorage.setItem('idPlanilha', planilhaEncontrada.id);
+            const nomeExtraido = planilhaEncontrada.name.replace('Base de Dados - ', '');
+            setNomeLoja(nomeExtraido);
+            localStorage.setItem('nomeLoja', nomeExtraido);
+          }
+          setBuscandoNoDrive(false);
+        }
+
+        // Atualiza a barrinha lá em cima
+        setTokenGoogle(token);
+        
+        // Direciona pro lugar certo
+        if (dadosConta.is_admin) {
+            navigate('/operacoes', { replace: true });
+        } else {
+            navigate('/dashboard', { replace: true });
+        }
+
+      } catch (erro) {
+        console.error("Erro no login pela Navbar:", erro);
       }
     },
     onError: (erro) => console.log('Erro no Login:', erro),
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets'
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email'
   });
 
   const handleLogout = () => {
@@ -56,6 +101,7 @@ export default function Navbar() {
     localStorage.removeItem('tokenGoogle');
     localStorage.removeItem('idPlanilha');
     localStorage.removeItem('nomeLoja');
+    localStorage.removeItem('isAdmin'); 
     setMenuMobileAberto(false);
     navigate('/');
   };
@@ -77,7 +123,6 @@ export default function Navbar() {
     setCriandoPlanilha(false);
   };
 
-  // Estilos Melhorados para Desktop
   const classesLinkAtivo = (caminho) => {
     const baseClasses = "px-3 xl:px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ease-in-out whitespace-nowrap";
     return location.pathname === caminho
@@ -85,7 +130,6 @@ export default function Navbar() {
       : `${baseClasses} text-gray-400 hover:bg-gray-800 hover:text-white`;
   };
 
-  // Estilos Melhorados para Mobile
   const classesLinkMobileAtivo = (caminho) => {
     const baseClasses = "block px-4 py-3 rounded-xl text-base font-bold transition-colors";
     return location.pathname === caminho
@@ -95,28 +139,23 @@ export default function Navbar() {
 
   const fecharMenuMobile = () => setMenuMobileAberto(false);
 
-  const mostrarModalConfiguracao = tokenGoogle && !idPlanilha && !buscandoNoDrive;
+  const mostrarModalConfiguracao = tokenGoogle && !idPlanilha && !buscandoNoDrive && !isAdmin;
 
   return (
     <>
-      {/* 
-        AJUSTE: "fixed top-0 left-0 w-full" crava o menu no topo e não deixa ele rolar com a página. 
-      */}
       <nav className="bg-gray-900/95 backdrop-blur-md border-b border-gray-800/50 shadow-sm fixed top-0 left-0 z-50 w-full transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             
-            {/* LOGO / BRAND */}
             <div className="flex-shrink-0 flex items-center">
               <span className="text-white text-lg sm:text-xl xl:text-2xl font-black tracking-tight flex items-center gap-2 sm:gap-3 truncate max-w-[200px] sm:max-w-none">
                 <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-inner flex-shrink-0 flex items-center justify-center">
                    <span className="text-xl leading-none">🛒</span> 
                 </div>
-                <span className="truncate">{!tokenGoogle ? 'Sistema de Gestão' : (buscandoNoDrive ? 'Sincronizando...' : nomeLoja)}</span>
+                <span className="truncate">{!tokenGoogle ? 'Giro - Sistema de Gestão' : (buscandoNoDrive ? 'Sincronizando...' : nomeLoja)}</span>
               </span>
             </div>
 
-            {/* MENU DESKTOP */}
             <div className="hidden lg:block">
               <div className="flex items-center space-x-1 xl:space-x-2">
                 {tokenGoogle ? (
@@ -127,6 +166,10 @@ export default function Navbar() {
                     <Link to="/despesas" className={classesLinkAtivo('/despesas')}>Despesas</Link>
                     <Link to="/clientes" className={classesLinkAtivo('/clientes')}>Clientes</Link>
                     <Link to="/cobrancas" className={classesLinkAtivo('/cobrancas')}>Cobranças</Link>
+                    
+                    {isAdmin && (
+                       <Link to="/operacoes" className={classesLinkAtivo('/operacoes')}>⚙️ Operações</Link>
+                    )}
                     
                     <div className="flex items-center space-x-3 ml-2 xl:ml-4 pl-4 xl:pl-6 border-l border-gray-800/80 h-8">
                       <div className="px-3 py-1.5 bg-gray-800/50 text-green-400 border border-gray-700/50 text-xs font-bold rounded-lg cursor-default flex items-center gap-1.5">
@@ -149,7 +192,6 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* BOTÃO DO MENU MOBILE (Hambúrguer) */}
             <div className="lg:hidden flex items-center">
               {tokenGoogle ? (
                 <button 
@@ -176,7 +218,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MENU MOBILE EXPANDIDO */}
         {menuMobileAberto && tokenGoogle && (
           <div className="lg:hidden bg-gray-900/95 backdrop-blur-xl border-t border-gray-800 absolute w-full shadow-2xl rounded-b-3xl animate-fade-in-down max-h-[85vh] overflow-y-auto">
             <div className="px-4 pt-4 pb-6 space-y-1.5">
@@ -186,6 +227,10 @@ export default function Navbar() {
               <Link to="/clientes" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/clientes')}>👥 Clientes</Link>
               <Link to="/despesas" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/despesas')}>💸 Despesas</Link>
               <Link to="/cobrancas" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/cobrancas')}>📢 Cobranças</Link>
+              
+              {isAdmin && (
+                 <Link to="/operacoes" onClick={fecharMenuMobile} className={classesLinkMobileAtivo('/operacoes')}>⚙️ Controle de Operações</Link>
+              )}
             </div>
             <div className="p-5 border-t border-gray-800 bg-gray-900 rounded-b-3xl">
               <div className="flex flex-col gap-3">
@@ -202,14 +247,8 @@ export default function Navbar() {
         )}
       </nav>
 
-      {/* 
-        "DIV FANTASMA": Como o menu agora é 'fixed', ele foi removido do fluxo da página. 
-        Essa div vazia ocupa o espaço exato da altura do menu (h-20) para que o conteúdo das telas
-        não comece escondido atrás da barra de navegação!
-      */}
       <div className="h-20 w-full opacity-0 pointer-events-none"></div>
 
-      {/* MODAL CONFIGURAÇÃO INICIAL */}
       {mostrarModalConfiguracao && (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl max-w-md w-full border border-gray-100 animate-fade-in-down">
