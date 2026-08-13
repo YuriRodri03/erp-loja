@@ -52,7 +52,7 @@ export default function Home() {
 
         setEmailCliente(emailUsuario);
 
-        const resBackend = await fetch('http://localhost:3001/api/auth/status', {
+        const resBackend = await fetch('https://erp-loja.onrender.com/api/auth/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: emailUsuario })

@@ -19,8 +19,7 @@ export default function Operacoes() {
   const mostrarAlerta = (mensagem, tipo = 'sucesso') => setAlerta({ visivel: true, mensagem, tipo });
   const fecharAlerta = () => setAlerta({ ...alerta, visivel: false });
 
-  // URL do seu backend local (depois mudaremos para a URL da Vercel/Render)
-  const API_URL = 'http://localhost:3001/api';
+  const API_URL = 'https://erp-loja.onrender.com/api';
 
   useEffect(() => {
     // Segurança básica: Se não estiver logado no Google, expulsa.
