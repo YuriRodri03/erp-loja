@@ -13,14 +13,12 @@ export default function Home() {
   const [termosAceitos, setTermosAceitos] = useState(false);
   const [processandoLogin, setProcessandoLogin] = useState(false);
   
-  // Estado para controlar qual documento legal abrir ('termos', 'privacidade' ou null)
   const [documentoLegalAberto, setDocumentoLegalAberto] = useState(null);
   
-  const [planoEscolhido, setPlanoEscolhido] = useState({ nome: '', valor: 0, valorFormatado: '' });
+  const [planoEscolhido, setPlanoEscolhido] = useState({ nome: '', valor: '0,00' });
   const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
-  const [emailCliente, setEmailCliente] = useState('');
 
-  // Roteamento inicial
+  // Roteamento inicial - Só redireciona pro Dashboard se não estiver olhando a tela de pagamento
   useEffect(() => {
     if (tokenGoogle && !mostrarModalPagamento) {
       const adminCache = localStorage.getItem('isAdmin') === 'true';
@@ -45,12 +43,10 @@ export default function Home() {
         const emailUsuario = dadosGoogle.email;
 
         if (!emailUsuario) {
-           alert("O Google não forneceu o seu e-mail. Verifique as configurações do Google Cloud Console.");
+           alert("O Google não forneceu o seu e-mail.");
            setProcessandoLogin(false);
            return;
         }
-
-        setEmailCliente(emailUsuario);
 
         const resBackend = await fetch('https://erp-loja.onrender.com/api/auth/status', {
             method: 'POST',
@@ -60,7 +56,7 @@ export default function Home() {
         
         const dadosConta = await resBackend.json();
 
-        // 🎉 ALERTA DE 30 DIAS GRÁTIS
+        // ALERTA DE 30 DIAS GRÁTIS
         if (dadosConta.mensagem === 'Teste de 30 dias iniciado!') {
             alert("Parabéns! O seu teste grátis de 30 dias começou agora. Crie sua base de dados a seguir e aproveite o sistema completo!");
         }
@@ -78,8 +74,10 @@ export default function Home() {
             setIsAdmin(false);
         }
 
+        // Se a conta já existe e tá inativa, bloqueia e manda pagar
         if (dadosConta.status_pagamento === 'inativo') {
             setProcessandoLogin(false);
+            setPlanoEscolhido({ nome: 'Renovação', valor: '35,00' });
             setMostrarModalPagamento(true);
             return; 
         }
@@ -109,14 +107,15 @@ export default function Home() {
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email'
   });
 
-  const iniciarProcessoDeLogin = (nomePlano = 'Mensal', valorPlano = '35,00') => {
-    setPlanoEscolhido({ nome: nomePlano, valor: valorPlano });
+  // FUNÇÃO 1: Botão do Herói - Começa o teste grátis (pede login)
+  const iniciarTesteGratis = () => {
     setMostrarTermosLogin(true);
   };
 
-  const handleAceitarEProsseguir = () => {
-    setMostrarTermosLogin(false);
-    fazerLogin(); 
+  // FUNÇÃO 2: Botões de Preço - Mostra a tela de pagamento DIRETO
+  const iniciarCompraPlano = (nomePlano, valorPlano) => {
+    setPlanoEscolhido({ nome: nomePlano, valor: valorPlano });
+    setMostrarModalPagamento(true);
   };
 
   const linkInfinitePay = `https://pay.infinitepay.io/yuri-rodrigues07/${planoEscolhido.valor}`;
@@ -142,11 +141,11 @@ export default function Home() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-down w-full" style={{ animationDelay: '300ms' }}>
           <button 
-            onClick={() => iniciarProcessoDeLogin('Mensal', '35,00')}
+            onClick={iniciarTesteGratis}
             disabled={processandoLogin}
             className={`w-full sm:w-auto px-8 py-4 text-white font-extrabold text-base sm:text-lg rounded-xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 flex items-center justify-center gap-3 ${processandoLogin ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-black'}`}
           >
-            {processandoLogin ? 'Processando Login...' : 'Começar Meu Teste Grátis'}
+            {processandoLogin ? 'Iniciando...' : 'Começar Meu Teste Grátis'}
             {!processandoLogin && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>}
           </button>
         </div>
@@ -189,7 +188,7 @@ export default function Home() {
                 <li className="flex items-center text-gray-700 font-medium text-sm"><span className="text-green-500 mr-2 font-bold">✓</span> Suporte via WhatsApp</li>
                 <li className="flex items-center text-gray-700 font-medium text-sm"><span className="text-green-500 mr-2 font-bold">✓</span> Gerador de Carnês com PIX</li>
               </ul>
-              <button onClick={() => iniciarProcessoDeLogin('Mensal', '35,00')} className="w-full py-3.5 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold rounded-xl transition-colors">
+              <button onClick={() => iniciarCompraPlano('Mensal', '35,00')} className="w-full py-3.5 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold rounded-xl transition-colors">
                 Assinar Mensal
               </button>
             </div>
@@ -209,7 +208,7 @@ export default function Home() {
                 <li className="flex items-center text-gray-300 font-medium text-sm"><span className="text-blue-400 mr-2 font-bold">✓</span> <strong>Economia de 20% ao ano</strong></li>
                 <li className="flex items-center text-gray-300 font-medium text-sm"><span className="text-blue-400 mr-2 font-bold">✓</span> Suporte Prioritário</li>
               </ul>
-              <button onClick={() => iniciarProcessoDeLogin('Anual', '336,00')} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-600/30">
+              <button onClick={() => iniciarCompraPlano('Anual', '336,00')} className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors shadow-lg shadow-blue-600/30">
                 Assinar Anual Agora
               </button>
             </div>
@@ -226,7 +225,7 @@ export default function Home() {
                 <li className="flex items-center text-gray-700 font-medium text-sm"><span className="text-green-500 mr-2 font-bold">✓</span> <strong>Economia de 10%</strong></li>
                 <li className="flex items-center text-gray-700 font-medium text-sm"><span className="text-green-500 mr-2 font-bold">✓</span> Suporte via WhatsApp</li>
               </ul>
-              <button onClick={() => iniciarProcessoDeLogin('Trimestral', '96,00')} className="w-full py-3.5 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold rounded-xl transition-colors">
+              <button onClick={() => iniciarCompraPlano('Trimestral', '96,00')} className="w-full py-3.5 bg-white border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold rounded-xl transition-colors">
                 Assinar Trimestral
               </button>
             </div>
@@ -234,7 +233,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* RODAPÉ COM SUPORTE E LINKS LEGAIS SEPARADOS */}
       <footer className="w-full bg-gray-900 pt-16 pb-8 border-t border-gray-800 z-10 text-center sm:text-left">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
@@ -276,7 +274,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* MODAL 1: ACEITE DOS TERMOS NO MOMENTO DO LOGIN */}
+      {/* MODAL 1: ACEITE DOS TERMOS - APENAS PARA QUEM CLICOU NO TESTE GRÁTIS */}
       {mostrarTermosLogin && (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-down border border-gray-100">
@@ -307,7 +305,7 @@ export default function Home() {
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4">
                 <button onClick={() => setMostrarTermosLogin(false)} className="w-full sm:w-auto px-6 py-3.5 text-gray-500 font-bold text-sm hover:bg-gray-100 rounded-xl transition-colors">Cancelar</button>
-                <button onClick={handleAceitarEProsseguir} disabled={!termosAceitos} className={`w-full sm:w-auto px-8 py-3.5 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${termosAceitos ? 'bg-gray-900 hover:bg-black text-white shadow-md hover:-translate-y-0.5' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+                <button onClick={() => { setMostrarTermosLogin(false); fazerLogin(); }} disabled={!termosAceitos} className={`w-full sm:w-auto px-8 py-3.5 font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${termosAceitos ? 'bg-gray-900 hover:bg-black text-white shadow-md hover:-translate-y-0.5' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                   Continuar com o Google
                 </button>
               </div>
@@ -316,7 +314,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL 2: TELA DE PAGAMENTO EMBUTIDA */}
+      {/* MODAL 2: TELA DE PAGAMENTO (ATIVA QUANDO CLICA NOS PREÇOS) */}
       {mostrarModalPagamento && (
         <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-down border border-gray-100">
@@ -356,7 +354,7 @@ export default function Home() {
 
                 <button 
                   onClick={() => {
-                    alert("Aguarde nossa equipe verificar o pagamento. Assim que liberado, seu acesso será automático ao fazer login!");
+                    alert("Aguarde nossa equipe verificar o pagamento. Assim que liberado, basta clicar em Login no topo do site!");
                     setMostrarModalPagamento(false);
                   }}
                   className="w-full py-3.5 bg-gray-100 text-gray-600 hover:bg-gray-200 font-bold text-sm rounded-xl transition-all"
@@ -369,7 +367,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL 3: LEITURA DOS DOCUMENTOS LEGAIS (SEPARADOS) */}
+      {/* MODAL 3: LEITURA DOS DOCUMENTOS LEGAIS */}
       {documentoLegalAberto && (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
           <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-fade-in-down border border-gray-100">
@@ -383,67 +381,54 @@ export default function Home() {
             </div>
 
             <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-8 text-sm text-gray-600 font-medium">
-              
-              {/* CONTEÚDO DOS TERMOS DE SERVIÇO */}
               {documentoLegalAberto === 'termos' && (
                 <>
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">1. Aceitação dos Termos</h3>
                     <p className="leading-relaxed">Ao acessar e utilizar nosso Sistema de Gestão ("SaaS"), você concorda em cumprir e ser regido por estes Termos de Serviço. Caso não concorde com qualquer parte destes termos, o uso do sistema é expressamente proibido. O sistema destina-se a facilitar a organização comercial e financeira de pequenos negócios.</p>
                   </section>
-                  
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">2. Descrição e Disponibilidade do Serviço</h3>
                     <p className="leading-relaxed">O sistema fornece uma interface web interativa. Nós não possuímos um banco de dados centralizado com as suas informações financeiras; nosso software atua como uma ponte, gerando e lendo planilhas diretamente no seu Google Drive pessoal. Nós nos esforçamos para manter a plataforma online 24/7, porém não garantimos disponibilidade ininterrupta, isentando-nos de responsabilidade por instabilidades de servidores de terceiros (como Google ou provedores de hospedagem).</p>
                   </section>
-
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">3. Pagamentos, Assinaturas e Reembolsos</h3>
                     <p className="leading-relaxed">O serviço é cobrado de forma antecipada (pré-paga) através de planos selecionados pelo usuário. Todo o processamento financeiro é terceirizado (via InfinitePay). Em caso de inadimplência, o acesso ao painel do sistema será suspenso, mas seus arquivos no Google Drive permanecerão intactos. Não oferecemos reembolso por meses parcialmente utilizados.</p>
                   </section>
-
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">4. Propriedade Intelectual e Uso Indevido</h3>
                     <p className="leading-relaxed">O código-fonte, design, marca e interfaces do sistema são de nossa propriedade exclusiva. É estritamente proibido realizar engenharia reversa, copiar a interface ou usar o sistema para facilitar a venda de produtos ilícitos, pirataria ou fraudes. A violação desta cláusula resultará em banimento imediato sem aviso prévio.</p>
                   </section>
-
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">5. Isenção e Limitação de Responsabilidade</h3>
                     <p className="leading-relaxed">Você compreende que é o único responsável pelos dados que insere no sistema. Não nos responsabilizamos por perdas financeiras, erros de estoque, exclusão acidental de arquivos do seu Drive ou quebras de sigilo oriundas do compartilhamento indevido da sua própria conta do Google.</p>
                   </section>
                 </>
               )}
-
-              {/* CONTEÚDO DAS POLÍTICAS DE PRIVACIDADE */}
               {documentoLegalAberto === 'privacidade' && (
                 <>
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">1. Coleta de Dados Pessoais</h3>
                     <p className="leading-relaxed">Coletamos o mínimo de informações possíveis. No momento do login, utilizamos o serviço de autenticação do Google (OAuth 2.0) e armazenamos em nossos registros de assinatura exclusivamente o seu **Endereço de E-mail**. Não capturamos nem armazenamos sua senha do Google em nenhuma hipótese.</p>
                   </section>
-
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">2. Acesso ao Google Drive e Escopos Restritos</h3>
                     <p className="leading-relaxed">Para entregar a funcionalidade principal do sistema, solicitamos as permissões `drive.file` e `spreadsheets`. Isto significa que a nossa aplicação **só tem permissão para visualizar, editar e gerenciar os arquivos de planilha que ela mesma criou** no seu Google Drive. Nós não temos permissão técnica nem lógica para ler suas fotos, PDFs ou documentos pessoais criados por você ou por outros aplicativos.</p>
                   </section>
-
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">3. Armazenamento Descentralizado dos Dados Financeiros</h3>
                     <p className="leading-relaxed">Diferente de sistemas convencionais, todas as suas métricas de vendas, despesas, lista de clientes e inventário de estoque **não** passam por nossos servidores centrais para serem guardadas. Elas são gravadas diretamente no seu ecossistema do Google. Nós não vendemos, alugamos ou repassamos seus dados financeiros para terceiros, pois sequer temos acesso direto a eles fora do escopo da sua utilização na interface web.</p>
                   </section>
-
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">4. Retenção e Exclusão de Dados</h3>
                     <p className="leading-relaxed">Como seus arquivos de gestão estão no seu Drive, você tem total controle sobre eles. Se você desejar parar de usar o sistema e apagar seus dados, basta acessar o seu Google Drive e deletar a planilha "Base de Dados". Para solicitar a exclusão do seu e-mail do nosso controle de assinaturas, basta entrar em contato através dos nossos canais de suporte.</p>
                   </section>
-                  
                   <section>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">5. Uso de Cookies e Cache Local</h3>
                     <p className="leading-relaxed">Utilizamos o `localStorage` do seu navegador exclusivamente para manter a sua sessão de login ativa e guardar referências de navegação (como o ID da sua planilha), com o objetivo de melhorar a velocidade e a experiência de uso. Você pode limpá-los a qualquer momento nas configurações do seu navegador.</p>
                   </section>
                 </>
               )}
-
             </div>
 
             <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
