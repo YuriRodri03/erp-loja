@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AppContext } from '../utils/AppProvider';
 import { useGoogleLogin } from '@react-oauth/google';
 import { buscarPlanilhaExistente } from '../services/googleSheets';
@@ -12,8 +12,6 @@ export default function Home() {
   const [mostrarTermosLogin, setMostrarTermosLogin] = useState(false);
   const [termosAceitos, setTermosAceitos] = useState(false);
   const [processandoLogin, setProcessandoLogin] = useState(false);
-  
-  const [documentoLegalAberto, setDocumentoLegalAberto] = useState(null);
   
   const [planoEscolhido, setPlanoEscolhido] = useState({ nome: '', valor: '0,00' });
   const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
@@ -135,8 +133,9 @@ export default function Home() {
           Gestão <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">simples e poderosa</span> <br className="hidden lg:block" /> para quem não tem tempo a perder.
         </h1>
         
+        {/* TEXTO ATUALIZADO PARA O GOOGLE APROVAR */}
         <p className="mt-4 text-base sm:text-lg lg:text-xl text-gray-600 mb-8 sm:mb-10 max-w-3xl mx-auto animate-fade-in-down font-medium" style={{ animationDelay: '200ms' }}>
-          Esqueça os sistemas caros e complicados. Controle de estoque integrado, fluxo de caixa em tempo real e o melhor gerador de carnês do mercado. Tudo sincronizado com segurança na sua própria conta Google.
+          O GIRO é um aplicativo de gestão financeira e controle de estoque criado para pequenos lojistas. Nossa finalidade é organizar suas vendas e carnês armazenando os dados exclusivamente na sua própria conta do Google Drive, garantindo privacidade e controle total sobre suas informações, sem banco de dados de terceiros.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-down w-full" style={{ animationDelay: '300ms' }}>
@@ -258,11 +257,12 @@ export default function Home() {
               </ul>
             </div>
 
+            {/* LINKS REAIS PARA AS PÁGINAS LEGAIS */}
             <div>
               <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">Transparência</h4>
               <ul className="space-y-3">
-                <li><button onClick={() => setDocumentoLegalAberto('termos')} className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Termos de Serviço</button></li>
-                <li><button onClick={() => setDocumentoLegalAberto('privacidade')} className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Políticas de Privacidade</button></li>
+                <li><Link to="/termos" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Termos de Serviço</Link></li>
+                <li><Link to="/privacidade" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">Políticas de Privacidade</Link></li>
               </ul>
             </div>
 
@@ -290,7 +290,9 @@ export default function Home() {
                 </div>
                 <div>
                   <h4 className="font-extrabold text-gray-900 text-base mb-1">Seus dados são 100% seus</h4>
-                  <p>O aplicativo não possui um banco de dados central. As informações de vendas e estoque são gravadas <strong>exclusivamente na sua própria conta do Google Drive</strong>, em formato de planilha. Ao prosseguir, você concorda com nossos <span onClick={() => setDocumentoLegalAberto('termos')} className="text-blue-600 cursor-pointer hover:underline font-bold">Termos de Serviço</span> e <span onClick={() => setDocumentoLegalAberto('privacidade')} className="text-blue-600 cursor-pointer hover:underline font-bold">Políticas de Privacidade</span>.</p>
+                  <p>
+                    O aplicativo não possui um banco de dados central. As informações de vendas e estoque são gravadas <strong>exclusivamente na sua própria conta do Google Drive</strong>, em formato de planilha. Ao prosseguir, você concorda com nossos <Link to="/termos" target="_blank" className="text-blue-600 hover:underline font-bold">Termos de Serviço</Link> e <Link to="/privacidade" target="_blank" className="text-blue-600 hover:underline font-bold">Políticas de Privacidade</Link>.
+                  </p>
                 </div>
               </div>
             </div>
@@ -314,7 +316,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL 2: TELA DE PAGAMENTO (ATIVA QUANDO CLICA NOS PREÇOS) */}
+      {/* MODAL 2: TELA DE PAGAMENTO */}
       {mostrarModalPagamento && (
         <div className="fixed inset-0 bg-gray-900/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-down border border-gray-100">
@@ -362,79 +364,6 @@ export default function Home() {
                   Já realizei o pagamento
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: LEITURA DOS DOCUMENTOS LEGAIS */}
-      {documentoLegalAberto && (
-        <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-fade-in-down border border-gray-100">
-            <div className="p-6 sm:p-8 border-b border-gray-100 bg-white flex justify-between items-center sticky top-0 z-10">
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-                {documentoLegalAberto === 'termos' ? 'Termos de Serviço' : 'Políticas de Privacidade'}
-              </h2>
-              <button onClick={() => setDocumentoLegalAberto(null)} className="text-gray-400 hover:text-gray-800 transition-colors p-2 bg-gray-50 rounded-full">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-            </div>
-
-            <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-8 text-sm text-gray-600 font-medium">
-              {documentoLegalAberto === 'termos' && (
-                <>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">1. Aceitação dos Termos</h3>
-                    <p className="leading-relaxed">Ao acessar e utilizar nosso Sistema de Gestão ("SaaS"), você concorda em cumprir e ser regido por estes Termos de Serviço. Caso não concorde com qualquer parte destes termos, o uso do sistema é expressamente proibido. O sistema destina-se a facilitar a organização comercial e financeira de pequenos negócios.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">2. Descrição e Disponibilidade do Serviço</h3>
-                    <p className="leading-relaxed">O sistema fornece uma interface web interativa. Nós não possuímos um banco de dados centralizado com as suas informações financeiras; nosso software atua como uma ponte, gerando e lendo planilhas diretamente no seu Google Drive pessoal. Nós nos esforçamos para manter a plataforma online 24/7, porém não garantimos disponibilidade ininterrupta, isentando-nos de responsabilidade por instabilidades de servidores de terceiros (como Google ou provedores de hospedagem).</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">3. Pagamentos, Assinaturas e Reembolsos</h3>
-                    <p className="leading-relaxed">O serviço é cobrado de forma antecipada (pré-paga) através de planos selecionados pelo usuário. Todo o processamento financeiro é terceirizado (via InfinitePay). Em caso de inadimplência, o acesso ao painel do sistema será suspenso, mas seus arquivos no Google Drive permanecerão intactos. Não oferecemos reembolso por meses parcialmente utilizados.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">4. Propriedade Intelectual e Uso Indevido</h3>
-                    <p className="leading-relaxed">O código-fonte, design, marca e interfaces do sistema são de nossa propriedade exclusiva. É estritamente proibido realizar engenharia reversa, copiar a interface ou usar o sistema para facilitar a venda de produtos ilícitos, pirataria ou fraudes. A violação desta cláusula resultará em banimento imediato sem aviso prévio.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">5. Isenção e Limitação de Responsabilidade</h3>
-                    <p className="leading-relaxed">Você compreende que é o único responsável pelos dados que insere no sistema. Não nos responsabilizamos por perdas financeiras, erros de estoque, exclusão acidental de arquivos do seu Drive ou quebras de sigilo oriundas do compartilhamento indevido da sua própria conta do Google.</p>
-                  </section>
-                </>
-              )}
-              {documentoLegalAberto === 'privacidade' && (
-                <>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">1. Coleta de Dados Pessoais</h3>
-                    <p className="leading-relaxed">Coletamos o mínimo de informações possíveis. No momento do login, utilizamos o serviço de autenticação do Google (OAuth 2.0) e armazenamos em nossos registros de assinatura exclusivamente o seu **Endereço de E-mail**. Não capturamos nem armazenamos sua senha do Google em nenhuma hipótese.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">2. Acesso ao Google Drive e Escopos Restritos</h3>
-                    <p className="leading-relaxed">Para entregar a funcionalidade principal do sistema, solicitamos as permissões `drive.file` e `spreadsheets`. Isto significa que a nossa aplicação **só tem permissão para visualizar, editar e gerenciar os arquivos de planilha que ela mesma criou** no seu Google Drive. Nós não temos permissão técnica nem lógica para ler suas fotos, PDFs ou documentos pessoais criados por você ou por outros aplicativos.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">3. Armazenamento Descentralizado dos Dados Financeiros</h3>
-                    <p className="leading-relaxed">Diferente de sistemas convencionais, todas as suas métricas de vendas, despesas, lista de clientes e inventário de estoque **não** passam por nossos servidores centrais para serem guardadas. Elas são gravadas diretamente no seu ecossistema do Google. Nós não vendemos, alugamos ou repassamos seus dados financeiros para terceiros, pois sequer temos acesso direto a eles fora do escopo da sua utilização na interface web.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">4. Retenção e Exclusão de Dados</h3>
-                    <p className="leading-relaxed">Como seus arquivos de gestão estão no seu Drive, você tem total controle sobre eles. Se você desejar parar de usar o sistema e apagar seus dados, basta acessar o seu Google Drive e deletar a planilha "Base de Dados". Para solicitar a exclusão do seu e-mail do nosso controle de assinaturas, basta entrar em contato através dos nossos canais de suporte.</p>
-                  </section>
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">5. Uso de Cookies e Cache Local</h3>
-                    <p className="leading-relaxed">Utilizamos o `localStorage` do seu navegador exclusivamente para manter a sua sessão de login ativa e guardar referências de navegação (como o ID da sua planilha), com o objetivo de melhorar a velocidade e a experiência de uso. Você pode limpá-los a qualquer momento nas configurações do seu navegador.</p>
-                  </section>
-                </>
-              )}
-            </div>
-
-            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
-              <button onClick={() => setDocumentoLegalAberto(null)} className="w-full sm:w-auto px-10 py-3.5 bg-gray-900 hover:bg-black text-white font-bold rounded-xl transition-all shadow-md hover:-translate-y-0.5">
-                Fechar documento
-              </button>
             </div>
           </div>
         </div>
