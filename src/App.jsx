@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AppProvider, AppContext } from './utils/AppProvider';
+
+// Importações das páginas
 import Navbar from './components/Navbar';
 import Operacoes from './pages/Operacoes';
 import Home from './pages/Home';
@@ -10,6 +12,11 @@ import Vendas from './pages/Vendas';
 import Clientes from './pages/Clientes';
 import Despesas from './pages/Despesas';
 import Cobrancas from './pages/Cobrancas';
+
+// NOVAS IMPORTAÇÕES (Páginas Legais)
+import Privacidade from './pages/Privacidade';
+// Crie o arquivo Termos.jsx na pasta pages para essa importação funcionar também!
+import Termos from './pages/Termos'; 
 
 const RotaProtegidaAdmin = ({ children }) => {
   const { isAdmin } = useContext(AppContext);
@@ -30,6 +37,11 @@ function AppRoutes() {
       <main className="flex-1 w-full max-w-full flex flex-col relative">
         <Routes>
           <Route path="/" element={<Home />} />
+          
+          {/* ROTAS PARA AS PÁGINAS LEGAIS */}
+          <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/termos" element={<Termos />} />
+          
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/vendas" element={<Vendas />} />
