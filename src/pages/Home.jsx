@@ -120,6 +120,28 @@ export default function Home() {
 
   return (
     <div className="relative bg-gray-50 overflow-hidden font-sans min-h-screen flex flex-col items-center">
+      {/* TELA DE CARREGAMENTO PROFISSIONAL (Entra por cima de tudo) */}
+      {processandoLogin && (
+        <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center z-[100] transition-opacity duration-300">
+          <div className="relative flex items-center justify-center mb-8">
+            {/* Círculo de fundo */}
+            <div className="absolute inset-0 w-24 h-24 border-4 border-gray-800 rounded-full"></div>
+            {/* Círculo animado girando */}
+            <div className="absolute inset-0 w-24 h-24 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            {/* Logo central */}
+            <div className="bg-gray-800 p-4 rounded-full shadow-inner z-10 flex items-center justify-center">
+              <span className="text-3xl leading-none">🛒</span>
+            </div>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3 tracking-tight animate-pulse">
+            Construindo seu ambiente...
+          </h2>
+          <p className="text-gray-400 font-medium text-sm sm:text-base text-center max-w-sm px-4">
+            Autenticando e sincronizando seu banco de dados seguro com o Google Drive.
+          </p>
+        </div>
+      )}
+      
       <div className="absolute inset-y-0 h-full w-full opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
       <div className="absolute top-0 left-[-10%] w-[60%] sm:w-[40%] h-[40%] rounded-full bg-blue-200/50 blur-[100px] sm:blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-0 right-[-10%] w-[50%] sm:w-[30%] h-[30%] rounded-full bg-indigo-200/50 blur-[100px] sm:blur-[120px] pointer-events-none"></div>
