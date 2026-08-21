@@ -155,7 +155,6 @@ export default function Home() {
           Gestão <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">simples e poderosa</span> <br className="hidden lg:block" /> para quem não tem tempo a perder.
         </h1>
         
-        {/* TEXTO ATUALIZADO PARA O GOOGLE APROVAR */}
         <p className="mt-4 text-base sm:text-lg lg:text-xl text-gray-600 mb-8 sm:mb-10 max-w-3xl mx-auto animate-fade-in-down font-medium" style={{ animationDelay: '200ms' }}>
           O GIRO é um aplicativo de gestão financeira e controle de estoque criado para pequenos lojistas. Nossa finalidade é organizar suas vendas e carnês armazenando os dados exclusivamente na sua própria conta do Google Drive, garantindo privacidade e controle total sobre suas informações, sem banco de dados de terceiros.
         </p>

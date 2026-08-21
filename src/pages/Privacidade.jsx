@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export default function Privacidade() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 pt-28">
       <div className="max-w-3xl mx-auto bg-white p-8 sm:p-12 rounded-3xl shadow-sm border border-gray-100">
         <div className="mb-8 border-b border-gray-100 pb-8">
           <Link to="/" className="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-2 mb-6">
