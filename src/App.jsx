@@ -37,11 +37,8 @@ function AppRoutes() {
       <main className="flex-1 w-full max-w-full flex flex-col relative">
         <Routes>
           <Route path="/" element={<Home />} />
-          
-          {/* ROTAS PARA AS PÁGINAS LEGAIS */}
           <Route path="/privacidade" element={<Privacidade />} />
           <Route path="/termos" element={<Termos />} />
-          
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/estoque" element={<Estoque />} />
           <Route path="/vendas" element={<Vendas />} />

@@ -30,7 +30,7 @@ export default function Home() {
 
   const fazerLogin = useGoogleLogin({
     onSuccess: async (resposta) => {
-      setProcessandoLogin(true);
+      setProcessandoLogin(true); // LIGA A TELA DE CARREGAMENTO AQUI!
       const token = resposta.access_token;
       
       try {
@@ -66,7 +66,7 @@ export default function Home() {
             setIsAdmin(true);
             setTokenGoogle(token); 
             navigate('/operacoes', { replace: true });
-            return; 
+            return; // Se for admin, navega e a tela de carregamento continua ativa
         } else {
             localStorage.setItem('isAdmin', 'false');
             setIsAdmin(false);
@@ -74,7 +74,7 @@ export default function Home() {
 
         // Se a conta já existe e tá inativa, bloqueia e manda pagar
         if (dadosConta.status_pagamento === 'inativo') {
-            setProcessandoLogin(false);
+            setProcessandoLogin(false); // Desliga a tela de carregamento para mostrar o modal
             setPlanoEscolhido({ nome: 'Renovação', valor: '35,00' });
             setMostrarModalPagamento(true);
             return; 
@@ -92,16 +92,19 @@ export default function Home() {
             }
         }
 
-        setTokenGoogle(token);
+        setTokenGoogle(token); // Atualiza o token e dispara o roteamento pro Dashboard
 
       } catch (error) {
           console.error("Erro geral no login:", error);
           alert("Ocorreu um erro ao processar o login.");
-      } finally {
-          setProcessandoLogin(false);
+          setProcessandoLogin(false); // Em caso de erro, desliga a tela
       }
+      // Note que o block 'finally' foi removido para a tela não apagar cedo demais.
     },
-    onError: (erro) => console.log('Erro no Login:', erro),
+    onError: (erro) => {
+      console.log('Erro no Login:', erro);
+      setProcessandoLogin(false);
+    },
     scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email'
   });
 
@@ -120,27 +123,6 @@ export default function Home() {
 
   return (
     <div className="relative bg-gray-50 overflow-hidden font-sans min-h-screen flex flex-col items-center">
-      {/* TELA DE CARREGAMENTO PROFISSIONAL (Entra por cima de tudo) */}
-      {processandoLogin && (
-        <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center z-[100] transition-opacity duration-300">
-          <div className="relative flex items-center justify-center mb-8">
-            {/* Círculo de fundo */}
-            <div className="absolute inset-0 w-24 h-24 border-4 border-gray-800 rounded-full"></div>
-            {/* Círculo animado girando */}
-            <div className="absolute inset-0 w-24 h-24 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            {/* Logo central */}
-            <div className="bg-gray-800 p-4 rounded-full shadow-inner z-10 flex items-center justify-center">
-              <span className="text-3xl leading-none">🛒</span>
-            </div>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3 tracking-tight animate-pulse">
-            Construindo seu ambiente...
-          </h2>
-          <p className="text-gray-400 font-medium text-sm sm:text-base text-center max-w-sm px-4">
-            Autenticando e sincronizando seu banco de dados seguro com o Google Drive.
-          </p>
-        </div>
-      )}
       
       <div className="absolute inset-y-0 h-full w-full opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
       <div className="absolute top-0 left-[-10%] w-[60%] sm:w-[40%] h-[40%] rounded-full bg-blue-200/50 blur-[100px] sm:blur-[120px] pointer-events-none"></div>
@@ -278,7 +260,6 @@ export default function Home() {
               </ul>
             </div>
 
-            {/* LINKS REAIS PARA AS PÁGINAS LEGAIS */}
             <div>
               <h4 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">Transparência</h4>
               <ul className="space-y-3">
@@ -390,6 +371,25 @@ export default function Home() {
         </div>
       )}
 
+      {/* TELA DE CARREGAMENTO PROFISSIONAL NO FINAL (Por cima de tudo) */}
+      {processandoLogin && (
+        <div className="fixed inset-0 bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center z-[9999] transition-opacity duration-300">
+          <div className="relative flex items-center justify-center mb-8">
+            <div className="absolute inset-0 w-24 h-24 border-4 border-gray-800 rounded-full"></div>
+            <div className="absolute inset-0 w-24 h-24 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="bg-gray-800 p-4 rounded-full shadow-inner z-10 flex items-center justify-center">
+              <span className="text-3xl leading-none">🛒</span>
+            </div>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3 tracking-tight animate-pulse">
+            Construindo seu ambiente...
+          </h2>
+          <p className="text-gray-400 font-medium text-sm sm:text-base text-center max-w-sm px-4">
+            Autenticando e sincronizando seu banco de dados seguro com o Google Drive.
+          </p>
+        </div>
+      )}
+      
     </div>
   );
 }
