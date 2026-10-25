@@ -51,8 +51,23 @@ export default function Home() {
     verificarSessaoExistente();
   }, [tokenGoogle, navigate, mostrarModalPagamento, processandoLogin, setIdPlanilha, setNomeLoja]);
 
-  const fazerLogin = useGoogleLogin({
+const fazerLogin = useGoogleLogin({
     onSuccess: async (resposta) => {
+      // 1. VERIFICA SE O USUÁRIO DEU PERMISSÃO AO DRIVE E AO SHEETS
+      const escoposConcedidos = resposta.scope || '';
+      const temPermissaoDrive = escoposConcedidos.includes('drive');
+      const temPermissaoSheets = escoposConcedidos.includes('spreadsheets');
+
+      if (!temPermissaoDrive || !temPermissaoSheets) {
+        alert(
+          "⚠️ Permissão Incompleta!\n\n" +
+          "Para o sistema funcionar e encontrar sua loja, você precisa marcar as caixinhas de acesso ao Google Drive e às Planilhas na tela de login do Google.\n\n" +
+          "Tente novamente e marque todas as opções."
+        );
+        setProcessandoLogin(false);
+        return;
+      }
+
       setProcessandoLogin(true); // LIGA A TELA DE CARREGAMENTO AQUI!
       const token = resposta.access_token;
       
@@ -99,13 +114,13 @@ export default function Home() {
 
         // Se a conta já existe e tá inativa, bloqueia e manda pagar
         if (dadosConta.status_pagamento === 'inativo') {
-          setProcessandoLogin(false); // Desliga a tela de carregamento para mostrar o modal
+          setProcessandoLogin(false);
           setPlanoEscolhido({ nome: 'Renovação', valor: '35,00' });
           setMostrarModalPagamento(true);
           return; 
         }
 
-        // SEMPRE busca a planilha no Google Drive no login para sincronizar AppContext e localStorage
+        // Busca a planilha no Google Drive
         const planilhaEncontrada = await buscarPlanilhaExistente(token);
         
         if (planilhaEncontrada && planilhaEncontrada.id) {
@@ -117,14 +132,12 @@ export default function Home() {
           setIdPlanilha(planilhaEncontrada.id);
           setNomeLoja(nomeExtraido);
         } else {
-          // Se não achou no Drive, limpa eventual ID fantasma antigo
           localStorage.removeItem('idPlanilha');
           localStorage.removeItem('nomeLoja');
           setIdPlanilha(null);
           setNomeLoja('');
         }
 
-        // Atualiza o token e redireciona pro Dashboard com o idPlanilha já carregado
         setTokenGoogle(token);
         setProcessandoLogin(false);
         navigate('/dashboard', { replace: true });
@@ -132,14 +145,15 @@ export default function Home() {
       } catch (error) {
         console.error("Erro geral no login:", error);
         alert("Ocorreu um erro ao processar o login.");
-        setProcessandoLogin(false); // Em caso de erro, desliga a tela
+        setProcessandoLogin(false);
       }
     },
     onError: (erro) => {
       console.log('Erro no Login:', erro);
       setProcessandoLogin(false);
     },
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email'
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
+    prompt: 'consent' // Garante que o Google mostre as caixinhas caso o usuário tenha esquecido de marcar antes
   });
 
   // FUNÇÃO 1: Botão do Herói - Começa o teste grátis (pede login)

@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useContext, useState } from 'react';
@@ -13,85 +14,14 @@ export default function Navbar() {
     tokenGoogle, setTokenGoogle, 
     idPlanilha, setIdPlanilha,
     nomeLoja, setNomeLoja,
-    isAdmin, setIsAdmin 
+    isAdmin, setIsAdmin,
+    carregandoDados
   } = useContext(AppContext);
 
   const [inputNomeLoja, setInputNomeLoja] = useState('');
   const [criandoPlanilha, setCriandoPlanilha] = useState(false);
   const [buscandoNoDrive, setBuscandoNoDrive] = useState(false);
   const [menuMobileAberto, setMenuMobileAberto] = useState(false); 
-
-  const fazerLogin = useGoogleLogin({
-    onSuccess: async (resposta) => {
-      const token = resposta.access_token;
-      
-      try {
-        const resGoogle = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const dadosGoogle = await resGoogle.json();
-        const emailUsuario = dadosGoogle.email;
-
-        const resBackend = await fetch('https://erp-loja.onrender.com/api/auth/status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: emailUsuario })
-        });
-        const dadosConta = await resBackend.json();
-
-        // 🎉 ALERTA DE 30 DIAS GRÁTIS - Aparece primeiro, antes de qualquer navegação
-        if (dadosConta.mensagem === 'Teste de 30 dias iniciado!') {
-            alert("Parabéns! O seu teste grátis de 30 dias começou agora. Crie sua base de dados a seguir e aproveite o sistema completo!");
-        }
-
-        localStorage.setItem('tokenGoogle', token);
-        if (dadosConta.is_admin) {
-            localStorage.setItem('isAdmin', 'true');
-            setIsAdmin(true);
-        } else {
-            localStorage.setItem('isAdmin', 'false');
-            setIsAdmin(false);
-        }
-
-        // Se estiver inativo, vai pra home exibir o Modal de Pagamento
-        if (dadosConta.status_pagamento === 'inativo') {
-            navigate('/');
-            return; 
-        }
-
-        // Se chegou aqui, ele tá ativo (seja dono, assinante antigo, ou nos 30 dias)
-        let planilhaAtual = localStorage.getItem('idPlanilha');
-        if (!planilhaAtual) {
-          setBuscandoNoDrive(true);
-          const planilhaEncontrada = await buscarPlanilhaExistente(token);
-          
-          if (planilhaEncontrada) {
-            setIdPlanilha(planilhaEncontrada.id);
-            localStorage.setItem('idPlanilha', planilhaEncontrada.id);
-            const nomeExtraido = planilhaEncontrada.name.replace('Base de Dados - ', '');
-            setNomeLoja(nomeExtraido);
-            localStorage.setItem('nomeLoja', nomeExtraido);
-          }
-          setBuscandoNoDrive(false);
-        }
-
-        // Atualiza a barrinha lá em cima
-        setTokenGoogle(token);
-        
-        // Direciona pro lugar certo
-        if (dadosConta.is_admin) {
-            navigate('/operacoes', { replace: true });
-        } else {
-            navigate('/dashboard', { replace: true });
-        }
-
-      } catch (erro) {
-        console.error("Erro no login pela Navbar:", erro);
-      }
-    },
-    onError: (erro) => console.log('Erro no Login:', erro),
-    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email'
-  });
 
   const handleLogout = () => {
     googleLogout();
@@ -106,19 +36,126 @@ export default function Navbar() {
     navigate('/');
   };
 
+  const fazerLogin = useGoogleLogin({
+    onSuccess: async (resposta) => {
+      // 1. TRAVA DE SEGURANÇA: Verifica se o usuário marcou as caixinhas do Drive e Sheets!
+      const escoposConcedidos = resposta.scope || '';
+      const temPermissaoDrive = escoposConcedidos.includes('drive');
+      const temPermissaoSheets = escoposConcedidos.includes('spreadsheets');
+
+      if (!temPermissaoDrive || !temPermissaoSheets) {
+        alert(
+          "⚠️ Permissão Incompleta!\n\n" +
+          "Para o sistema funcionar e acessar ou criar a planilha da sua loja, você precisa MARCAR AS CAIXINHAS de permissão do Google Drive e Planilhas na tela do Google.\n\n" +
+          "Clique em Login novamente e marque todas as opções."
+        );
+        return; // Cancela o login imediatamente para não prender o usuário!
+      }
+
+      const token = resposta.access_token;
+      
+      try {
+        setBuscandoNoDrive(true);
+
+        const resGoogle = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const dadosGoogle = await resGoogle.json();
+        const emailUsuario = dadosGoogle.email;
+
+        if (!emailUsuario) {
+          alert("O Google não forneceu o seu e-mail.");
+          setBuscandoNoDrive(false);
+          return;
+        }
+
+        const resBackend = await fetch('https://erp-loja.onrender.com/api/auth/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailUsuario })
+        });
+        const dadosConta = await resBackend.json();
+
+        // 🎉 ALERTA DE 30 DIAS GRÁTIS - Aparece primeiro, antes de qualquer navegação
+        if (dadosConta.mensagem === 'Teste de 30 dias iniciado!') {
+          alert("Parabéns! O seu teste grátis de 30 dias começou agora. Crie sua base de dados a seguir e aproveite o sistema completo!");
+        }
+
+        localStorage.setItem('tokenGoogle', token);
+        if (dadosConta.is_admin) {
+          localStorage.setItem('isAdmin', 'true');
+          setIsAdmin(true);
+          setTokenGoogle(token);
+          setBuscandoNoDrive(false);
+          navigate('/operacoes', { replace: true });
+          return;
+        } else {
+          localStorage.setItem('isAdmin', 'false');
+          setIsAdmin(false);
+        }
+
+        // Se estiver inativo, vai pra home exibir o Modal de Pagamento
+        if (dadosConta.status_pagamento === 'inativo') {
+          setBuscandoNoDrive(false);
+          navigate('/');
+          return; 
+        }
+
+        // SEMPRE busca no Drive ao logar para garantir sincronia com o AppContext
+        const planilhaEncontrada = await buscarPlanilhaExistente(token);
+        
+        if (planilhaEncontrada && planilhaEncontrada.id) {
+          const nomeExtraido = planilhaEncontrada.name.replace('Base de Dados - ', '').trim();
+          localStorage.setItem('idPlanilha', planilhaEncontrada.id);
+          localStorage.setItem('nomeLoja', nomeExtraido);
+          setIdPlanilha(planilhaEncontrada.id);
+          setNomeLoja(nomeExtraido);
+        } else {
+          localStorage.removeItem('idPlanilha');
+          localStorage.removeItem('nomeLoja');
+          setIdPlanilha(null);
+          setNomeLoja('');
+        }
+
+        // Atualiza o token e direciona pro Dashboard
+        setTokenGoogle(token);
+        setBuscandoNoDrive(false);
+        navigate('/dashboard', { replace: true });
+
+      } catch (erro) {
+        console.error("Erro no login pela Navbar:", erro);
+        setBuscandoNoDrive(false);
+      }
+    },
+    onError: (erro) => {
+      console.log('Erro no Login:', erro);
+      setBuscandoNoDrive(false);
+    },
+    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
+    prompt: 'consent' // Força o Google a exibir as caixinhas novamente caso o usuário tenha esquecido antes
+  });
+
   const handleCriarLoja = async (e) => {
     e.preventDefault();
-    if(!inputNomeLoja) return;
+    if (!inputNomeLoja.trim()) return;
 
     setCriandoPlanilha(true);
-    const novoId = await criarPlanilhaBase(tokenGoogle, inputNomeLoja);
+    const novoId = await criarPlanilhaBase(tokenGoogle, inputNomeLoja.trim());
     
     if (novoId) {
       setIdPlanilha(novoId);
       localStorage.setItem('idPlanilha', novoId);
-      setNomeLoja(inputNomeLoja);
-      localStorage.setItem('nomeLoja', inputNomeLoja);
+      setNomeLoja(inputNomeLoja.trim());
+      localStorage.setItem('nomeLoja', inputNomeLoja.trim());
       alert("Sucesso! Banco de Dados criado no seu Drive.");
+    } else {
+      // Se falhar (ex: o usuário estava com um token antigo salvo no navegador sem permissão do Drive)
+      alert(
+        "⚠️ Não foi possível criar a planilha no seu Google Drive!\n\n" +
+        "Isso acontece quando as permissões do Google Drive e Planilhas não foram marcadas no login.\n" +
+        "Vamos desconectar sua sessão para que você entre novamente marcando todas as caixinhas de permissão."
+      );
+      handleLogout();
     }
     setCriandoPlanilha(false);
   };
@@ -139,7 +176,8 @@ export default function Navbar() {
 
   const fecharMenuMobile = () => setMenuMobileAberto(false);
 
-  const mostrarModalConfiguracao = tokenGoogle && !idPlanilha && !buscandoNoDrive && !isAdmin;
+  // Só mostra o modal se tiver token, NÃO tiver idPlanilha, NÃO estiver buscando no Drive (nem na Navbar nem no AppProvider) e NÃO for Admin
+  const mostrarModalConfiguracao = tokenGoogle && !idPlanilha && !buscandoNoDrive && !carregandoDados && !isAdmin;
 
   return (
     <>
@@ -152,7 +190,9 @@ export default function Navbar() {
                 <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-inner flex-shrink-0 flex items-center justify-center">
                    <span className="text-xl leading-none">🛒</span> 
                 </div>
-                <span className="truncate">{!tokenGoogle ? 'Giro - Sistema de Gestão' : (buscandoNoDrive ? 'Sincronizando...' : nomeLoja)}</span>
+                <span className="truncate">
+                  {!tokenGoogle ? 'Giro - Sistema de Gestão' : ((buscandoNoDrive || carregandoDados) ? 'Sincronizando...' : nomeLoja)}
+                </span>
               </span>
             </div>
 
@@ -279,6 +319,16 @@ export default function Navbar() {
                 ) : 'Criar ERP na Nuvem 🚀'}
               </button>
             </form>
+
+            <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-sm font-bold text-gray-400 hover:text-red-500 transition-colors"
+              >
+                Sair / Trocar de conta Google
+              </button>
+            </div>
           </div>
         </div>
       )}
