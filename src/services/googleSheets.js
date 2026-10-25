@@ -14,7 +14,7 @@ export const criarPlanilhaBase = async (token, nomeDaLoja) => {
           { properties: { title: 'Estoque' } },
           { properties: { title: 'Vendas' } },
           { properties: { title: 'Clientes' } },
-          { properties: { title: 'Despesas' } } // <-- ABA ADICIONADA AQUI!
+          { properties: { title: 'Despesas' } }
         ]
       })
     });
@@ -63,12 +63,27 @@ export const lerAba = async (token, idPlanilha, nomeAba) => {
 
 export const buscarPlanilhaExistente = async (token) => {
   try {
+    // Filtra por planilha, pelo nome E garante que NÃO está na lixeira (trashed = false)
+    const query = encodeURIComponent(
+      "mimeType='application/vnd.google-apps.spreadsheet' and name contains 'Base de Dados - ' and trashed = false"
+    );
+
     const response = await fetch(
-      "https://www.googleapis.com/drive/v3/files?q=mimeType='application/vnd.google-apps.spreadsheet' and name contains 'Base de Dados'",
+      `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&orderBy=createdTime desc`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
+
+    if (!response.ok) {
+      console.error("Erro na resposta da API do Drive:", await response.text());
+      return null;
+    }
+
     const data = await response.json();
-    if (data.files && data.files.length > 0) return data.files[0];
+    console.log("Planilhas encontradas no Drive:", data.files);
+
+    if (data.files && data.files.length > 0) {
+      return data.files[0]; // Retorna a planilha ativa mais recente
+    }
     return null; 
   } catch (error) {
     console.error("Erro ao buscar planilha no Drive:", error);
@@ -77,7 +92,7 @@ export const buscarPlanilhaExistente = async (token) => {
 };
 
 // ============================================================================
-// NOVAS FUNÇÕES AVANÇADAS: EDITAR E DELETAR
+// FUNÇÕES AVANÇADAS: EDITAR E DELETAR
 // ============================================================================
 
 // Função auxiliar 1: Acha qual é o número da linha na planilha buscando pelo ID
@@ -97,7 +112,7 @@ const obterIdDaAbaNumerico = async (token, idPlanilha, nomeAba) => {
   return aba ? aba.properties.sheetId : null;
 };
 
-// NOVA FUNÇÃO: Substitui os dados de uma linha existente (Edição)
+// Substitui os dados de uma linha existente (Edição)
 export const editarLinha = async (token, idPlanilha, nomeAba, idItem, novosValores) => {
   try {
     const indice = await encontrarIndiceDaLinha(token, idPlanilha, nomeAba, idItem);
@@ -124,7 +139,7 @@ export const editarLinha = async (token, idPlanilha, nomeAba, idItem, novosValor
   }
 };
 
-// NOVA FUNÇÃO: Remove a linha fisicamente da planilha (Deleção)
+// Remove a linha fisicamente da planilha (Deleção)
 export const deletarLinha = async (token, idPlanilha, nomeAba, idItem) => {
   try {
     const indice = await encontrarIndiceDaLinha(token, idPlanilha, nomeAba, idItem);

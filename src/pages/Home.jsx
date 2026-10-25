@@ -1,3 +1,4 @@
+// src/pages/Home.jsx
 import { useContext, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AppContext } from '../utils/AppProvider';
@@ -16,17 +17,39 @@ export default function Home() {
   const [planoEscolhido, setPlanoEscolhido] = useState({ nome: '', valor: '0,00' });
   const [mostrarModalPagamento, setMostrarModalPagamento] = useState(false);
 
-  // Roteamento inicial - Só redireciona pro Dashboard se não estiver olhando a tela de pagamento
+  // Roteamento inicial - Só redireciona se já estava logado antes e NÃO está processando o login no momento
   useEffect(() => {
-    if (tokenGoogle && !mostrarModalPagamento) {
-      const adminCache = localStorage.getItem('isAdmin') === 'true';
-      if (adminCache) {
-        navigate('/operacoes', { replace: true });
-      } else {
+    const verificarSessaoExistente = async () => {
+      if (tokenGoogle && !mostrarModalPagamento && !processandoLogin) {
+        const adminCache = localStorage.getItem('isAdmin') === 'true';
+        if (adminCache) {
+          navigate('/operacoes', { replace: true });
+          return;
+        }
+
+        // Garante que o idPlanilha esteja sincronizado antes de ir para o Dashboard
+        let planilhaSalva = localStorage.getItem('idPlanilha');
+        let lojaSalva = localStorage.getItem('nomeLoja');
+
+        if (!planilhaSalva) {
+          const planilhaEncontrada = await buscarPlanilhaExistente(tokenGoogle);
+          if (planilhaEncontrada && planilhaEncontrada.id) {
+            planilhaSalva = planilhaEncontrada.id;
+            lojaSalva = planilhaEncontrada.name.replace('Base de Dados - ', '').trim();
+            localStorage.setItem('idPlanilha', planilhaSalva);
+            localStorage.setItem('nomeLoja', lojaSalva);
+          }
+        }
+
+        if (planilhaSalva) setIdPlanilha(planilhaSalva);
+        if (lojaSalva) setNomeLoja(lojaSalva);
+
         navigate('/dashboard', { replace: true });
       }
-    }
-  }, [tokenGoogle, navigate, mostrarModalPagamento]);
+    };
+
+    verificarSessaoExistente();
+  }, [tokenGoogle, navigate, mostrarModalPagamento, processandoLogin, setIdPlanilha, setNomeLoja]);
 
   const fazerLogin = useGoogleLogin({
     onSuccess: async (resposta) => {
@@ -35,71 +58,82 @@ export default function Home() {
       
       try {
         const resGoogle = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` }
         });
         const dadosGoogle = await resGoogle.json();
         const emailUsuario = dadosGoogle.email;
 
         if (!emailUsuario) {
-           alert("O Google não forneceu o seu e-mail.");
-           setProcessandoLogin(false);
-           return;
+          alert("O Google não forneceu o seu e-mail.");
+          setProcessandoLogin(false);
+          return;
         }
 
         const resBackend = await fetch('https://erp-loja.onrender.com/api/auth/status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: emailUsuario })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailUsuario })
         });
         
         const dadosConta = await resBackend.json();
 
         // ALERTA DE 30 DIAS GRÁTIS
         if (dadosConta.mensagem === 'Teste de 30 dias iniciado!') {
-            alert("Parabéns! O seu teste grátis de 30 dias começou agora. Crie sua base de dados a seguir e aproveite o sistema completo!");
+          alert("Parabéns! O seu teste grátis de 30 dias começou agora. Crie sua base de dados a seguir e aproveite o sistema completo!");
         }
 
         localStorage.setItem('tokenGoogle', token);
         
+        // Fluxo de Admin
         if (dadosConta.is_admin) {
-            localStorage.setItem('isAdmin', 'true');
-            setIsAdmin(true);
-            setTokenGoogle(token); 
-            navigate('/operacoes', { replace: true });
-            return; // Se for admin, navega e a tela de carregamento continua ativa
+          localStorage.setItem('isAdmin', 'true');
+          setIsAdmin(true);
+          setTokenGoogle(token); 
+          setProcessandoLogin(false);
+          navigate('/operacoes', { replace: true });
+          return;
         } else {
-            localStorage.setItem('isAdmin', 'false');
-            setIsAdmin(false);
+          localStorage.setItem('isAdmin', 'false');
+          setIsAdmin(false);
         }
 
         // Se a conta já existe e tá inativa, bloqueia e manda pagar
         if (dadosConta.status_pagamento === 'inativo') {
-            setProcessandoLogin(false); // Desliga a tela de carregamento para mostrar o modal
-            setPlanoEscolhido({ nome: 'Renovação', valor: '35,00' });
-            setMostrarModalPagamento(true);
-            return; 
+          setProcessandoLogin(false); // Desliga a tela de carregamento para mostrar o modal
+          setPlanoEscolhido({ nome: 'Renovação', valor: '35,00' });
+          setMostrarModalPagamento(true);
+          return; 
         }
 
-        let planilhaAtual = localStorage.getItem('idPlanilha');
-        if (!planilhaAtual) {
-            const planilhaEncontrada = await buscarPlanilhaExistente(token);
-            if (planilhaEncontrada) {
-                setIdPlanilha(planilhaEncontrada.id);
-                localStorage.setItem('idPlanilha', planilhaEncontrada.id);
-                const nomeExtraido = planilhaEncontrada.name.replace('Base de Dados - ', '');
-                setNomeLoja(nomeExtraido);
-                localStorage.setItem('nomeLoja', nomeExtraido);
-            }
+        // SEMPRE busca a planilha no Google Drive no login para sincronizar AppContext e localStorage
+        const planilhaEncontrada = await buscarPlanilhaExistente(token);
+        
+        if (planilhaEncontrada && planilhaEncontrada.id) {
+          const nomeExtraido = planilhaEncontrada.name.replace('Base de Dados - ', '').trim();
+          
+          localStorage.setItem('idPlanilha', planilhaEncontrada.id);
+          localStorage.setItem('nomeLoja', nomeExtraido);
+          
+          setIdPlanilha(planilhaEncontrada.id);
+          setNomeLoja(nomeExtraido);
+        } else {
+          // Se não achou no Drive, limpa eventual ID fantasma antigo
+          localStorage.removeItem('idPlanilha');
+          localStorage.removeItem('nomeLoja');
+          setIdPlanilha(null);
+          setNomeLoja('');
         }
 
-        setTokenGoogle(token); // Atualiza o token e dispara o roteamento pro Dashboard
+        // Atualiza o token e redireciona pro Dashboard com o idPlanilha já carregado
+        setTokenGoogle(token);
+        setProcessandoLogin(false);
+        navigate('/dashboard', { replace: true });
 
       } catch (error) {
-          console.error("Erro geral no login:", error);
-          alert("Ocorreu um erro ao processar o login.");
-          setProcessandoLogin(false); // Em caso de erro, desliga a tela
+        console.error("Erro geral no login:", error);
+        alert("Ocorreu um erro ao processar o login.");
+        setProcessandoLogin(false); // Em caso de erro, desliga a tela
       }
-      // Note que o block 'finally' foi removido para a tela não apagar cedo demais.
     },
     onError: (erro) => {
       console.log('Erro no Login:', erro);

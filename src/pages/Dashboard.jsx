@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import { useContext, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { AppContext } from '../utils/AppProvider';
@@ -8,7 +9,7 @@ import {
 import AlertaFlutuante from '../components/AlertaFlutuante';
 
 export default function Dashboard() {
-  const { tokenGoogle, nomeLoja, produtos, vendas, clientes, despesas } = useContext(AppContext);
+  const { tokenGoogle, nomeLoja, produtos, vendas, clientes, despesas, carregandoDados } = useContext(AppContext);
   
   const hoje = new Date();
   const [abaAtiva, setAbaAtiva] = useState('geral');
@@ -84,10 +85,10 @@ export default function Dashboard() {
   const lucroLiquido = totalEmCaixa - totalDespesas;
   
   const estoqueCritico = produtos.filter(p => p.quantidade <= 5).sort((a, b) => a.quantidade - b.quantidade).slice(0, 5);
-  const contasPendentes = despesas.filter(d => d.status === 'PENDENTE').sort((a,b) => {
-      const [diaA, mesA, anoA] = a.data.split('/');
-      const [diaB, mesB, anoB] = b.data.split('/');
-      return new Date(anoA, mesA - 1, diaA) - new Date(anoB, mesB - 1, diaB);
+  const contasPendentes = despesas.filter(d => d.status === 'PENDENTE').sort((a, b) => {
+    const [diaA, mesA, anoA] = a.data.split('/');
+    const [diaB, mesB, anoB] = b.data.split('/');
+    return new Date(anoA, mesA - 1, diaA) - new Date(anoB, mesB - 1, diaB);
   }).slice(0, 5);
 
   const dataAtual = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -125,13 +126,17 @@ export default function Dashboard() {
       const [fDia, fMes, fAno] = fluxo.data.split('/');
 
       if (fAno === anoSelecionado) {
-        dadosAnuais[parseInt(fMes) - 1].Caixa += fluxo.valor;
+        if (dadosAnuais[parseInt(fMes) - 1]) {
+          dadosAnuais[parseInt(fMes) - 1].Caixa += fluxo.valor;
+        }
         faturamentoAno += fluxo.valor;
         if (!formaPagamentoMap[v.formaPagamento]) formaPagamentoMap[v.formaPagamento] = 0;
         formaPagamentoMap[v.formaPagamento] += fluxo.valor;
       }
       if (fAno === anoSelecionado && fMes === mesSelecionado) {
-        dadosMensais[parseInt(fDia) - 1].Caixa += fluxo.valor;
+        if (dadosMensais[parseInt(fDia) - 1]) {
+          dadosMensais[parseInt(fDia) - 1].Caixa += fluxo.valor;
+        }
         faturamentoMes += fluxo.valor;
       }
     });
@@ -159,13 +164,17 @@ export default function Dashboard() {
     const [dDia, dMes, dAno] = d.data.split('/');
 
     if (dAno === anoSelecionado) {
-      dadosAnuais[parseInt(dMes) - 1].Despesas += d.valor;
+      if (dadosAnuais[parseInt(dMes) - 1]) {
+        dadosAnuais[parseInt(dMes) - 1].Despesas += d.valor;
+      }
       despesasDoAnoTotal += d.valor;
       if (!despesasCategoriaAnoMap[d.categoria]) despesasCategoriaAnoMap[d.categoria] = 0;
       despesasCategoriaAnoMap[d.categoria] += d.valor;
     }
     if (dAno === anoSelecionado && dMes === mesSelecionado) {
-      dadosMensais[parseInt(dDia) - 1].Despesas += d.valor;
+      if (dadosMensais[parseInt(dDia) - 1]) {
+        dadosMensais[parseInt(dDia) - 1].Despesas += d.valor;
+      }
       despesasDoMesTotal += d.valor;
       if (!despesasCategoriaMesMap[d.categoria]) despesasCategoriaMesMap[d.categoria] = 0;
       despesasCategoriaMesMap[d.categoria] += d.valor;
@@ -198,7 +207,10 @@ export default function Dashboard() {
           <p className="text-sm sm:text-base text-gray-500 mt-1 capitalize">{dataAtual}</p>
         </div>
         <div className="px-5 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold border border-blue-100 flex items-center justify-center shadow-sm w-full md:w-auto">
-          <span className="mr-2 text-xl">🏢</span> <span className="truncate max-w-[200px] sm:max-w-none">{nomeLoja}</span>
+          <span className="mr-2 text-xl">🏢</span> 
+          <span className="truncate max-w-[200px] sm:max-w-none">
+            {carregandoDados ? 'Sincronizando loja...' : nomeLoja}
+          </span>
         </div>
       </div>
 
