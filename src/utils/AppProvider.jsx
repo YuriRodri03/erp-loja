@@ -4,6 +4,20 @@ import { lerAba, buscarPlanilhaExistente } from '../services/googleSheets';
 
 export const AppContext = createContext();
 
+// Função auxiliar ultra-segura para converter qualquer dado numérico/moeda do Sheets em número real
+const limparNumero = (val) => {
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (!val) return 0;
+  let str = String(val).replace(/[R$\s]/g, '').trim();
+  if (str.includes(',') && str.includes('.')) {
+    str = str.replace(/\./g, '').replace(',', '.'); // Ex: 1.250,50 -> 1250.50
+  } else if (str.includes(',')) {
+    str = str.replace(',', '.'); // Ex: 15,50 -> 15.50
+  }
+  const num = Number(str);
+  return isNaN(num) ? 0 : num;
+};
+
 export function AppProvider({ children }) {
   const [tokenGoogle, setTokenGoogle] = useState(() => localStorage.getItem('tokenGoogle') || null);
   const [idPlanilha, setIdPlanilha] = useState(() => localStorage.getItem('idPlanilha') || null);
@@ -74,33 +88,33 @@ export function AppProvider({ children }) {
           lerAba(tokenGoogle, planilhaAtualId, 'Despesas')
         ]);
 
-        // Processa o Estoque
+        // Processa o Estoque com conversão segura
         if (linhasEstoque && linhasEstoque.length > 0) {
           const estoqueFormatado = linhasEstoque.map(linha => ({
             id: linha[0],
             dataCadastro: linha[1],
             nome: linha[2],
-            quantidade: Number(linha[3]),
-            preco: Number(linha[4])
+            quantidade: limparNumero(linha[3]),
+            preco: limparNumero(linha[4])
           }));
           setProdutos(estoqueFormatado);
         } else {
           setProdutos([]);
         }
 
-        // Processa as Vendas
+        // Processa as Vendas com conversão segura
         if (linhasVendas && linhasVendas.length > 0) {
           const vendasFormatadas = linhasVendas.map(linha => ({
             id: linha[0],
             data: linha[1],
             produto: linha[2],
-            quantidade: Number(linha[3]),
-            valorUnitario: Number(linha[4]),
-            total: Number(linha[5]),
+            quantidade: limparNumero(linha[3]),
+            valorUnitario: limparNumero(linha[4]),
+            total: limparNumero(linha[5]),
             clienteId: linha[6],
             formaPagamento: linha[7],
             parcelasCartao: linha[8],
-            valorEntrada: Number(linha[9]),
+            valorEntrada: limparNumero(linha[9]),
             dataPrimeiraParcela: linha[10],
             statusPago: linha[11]
           }));
@@ -128,14 +142,14 @@ export function AppProvider({ children }) {
           setClientes([]);
         }
 
-        // Processa as Despesas
+        // Processa as Despesas com conversão segura
         if (linhasDespesas && linhasDespesas.length > 0) {
           const despesasFormatadas = linhasDespesas.map(linha => ({
             id: linha[0],
             data: linha[1],
             descricao: linha[2],
             categoria: linha[3],
-            valor: Number(linha[4]),
+            valor: limparNumero(linha[4]),
             status: linha[5]
           }));
           setDespesas(despesasFormatadas);

@@ -9,7 +9,10 @@ export const criarPlanilhaBase = async (token, nomeDaLoja) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        properties: { title: `Base de Dados - ${nomeDaLoja}` },
+        properties: { 
+          title: `Base de Dados - ${nomeDaLoja}`,
+          locale: 'pt_BR'
+        },
         sheets: [
           { properties: { title: 'Estoque' } },
           { properties: { title: 'Vendas' } },
@@ -18,9 +21,15 @@ export const criarPlanilhaBase = async (token, nomeDaLoja) => {
         ]
       })
     });
+
+    if (!response.ok) {
+      console.error("Erro na resposta ao criar planilha:", await response.text());
+      return null;
+    }
+
     const data = await response.json();
     console.log("Planilha criada! Detalhes:", data);
-    return data.spreadsheetId; 
+    return data.spreadsheetId || null; 
   } catch (error) {
     console.error("Erro ao criar a planilha:", error);
     return null;
@@ -29,8 +38,10 @@ export const criarPlanilhaBase = async (token, nomeDaLoja) => {
 
 export const adicionarLinha = async (token, idPlanilha, nomeAba, valores) => {
   try {
+    // Usamos valueInputOption=RAW para que números (ex: 15.5) sejam salvos como números reais
+    // sem sofrer interferência de ponto/vírgula do idioma da planilha
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${idPlanilha}/values/${nomeAba}:append?valueInputOption=USER_ENTERED`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${idPlanilha}/values/${nomeAba}:append?valueInputOption=RAW`,
       {
         method: 'POST',
         headers: {
@@ -40,6 +51,12 @@ export const adicionarLinha = async (token, idPlanilha, nomeAba, valores) => {
         body: JSON.stringify({ values: [valores] })
       }
     );
+
+    if (!response.ok) {
+      console.error(`Erro na API ao salvar na aba ${nomeAba}:`, await response.text());
+      return null;
+    }
+
     return await response.json();
   } catch (error) {
     console.error(`Erro ao salvar na aba ${nomeAba}:`, error);
@@ -49,10 +66,18 @@ export const adicionarLinha = async (token, idPlanilha, nomeAba, valores) => {
 
 export const lerAba = async (token, idPlanilha, nomeAba) => {
   try {
+    // UNFORMATTED_VALUE retorna os números puros (sem "R$" ou vírgula), evitando NaN no JavaScript
+    // FORMATTED_STRING mantém as datas exatamente como string "DD/MM/AAAA"
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${idPlanilha}/values/${nomeAba}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${idPlanilha}/values/${nomeAba}?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`,
       { headers: { 'Authorization': `Bearer ${token}` } }
     );
+
+    if (!response.ok) {
+      console.error(`Erro na API ao ler a aba ${nomeAba}:`, await response.text());
+      return [];
+    }
+
     const data = await response.json();
     return data.values || []; 
   } catch (error) {
@@ -98,8 +123,8 @@ export const buscarPlanilhaExistente = async (token) => {
 // Função auxiliar 1: Acha qual é o número da linha na planilha buscando pelo ID
 const encontrarIndiceDaLinha = async (token, idPlanilha, nomeAba, idBusca) => {
   const dados = await lerAba(token, idPlanilha, nomeAba);
-  // Procura em qual posição do array o ID bate. Retorna o índice (0, 1, 2...)
-  return dados.findIndex(linha => linha[0] == idBusca); 
+  // Compara como String para evitar divergência entre número e texto
+  return dados.findIndex(linha => String(linha[0]) === String(idBusca)); 
 };
 
 // Função auxiliar 2: Para deletar de verdade, o Google exige o ID numérico da aba (sheetId), não o nome.
@@ -108,7 +133,7 @@ const obterIdDaAbaNumerico = async (token, idPlanilha, nomeAba) => {
     headers: { 'Authorization': `Bearer ${token}` }
   });
   const data = await response.json();
-  const aba = data.sheets.find(s => s.properties.title === nomeAba);
+  const aba = data.sheets?.find(s => s.properties.title === nomeAba);
   return aba ? aba.properties.sheetId : null;
 };
 
@@ -118,11 +143,11 @@ export const editarLinha = async (token, idPlanilha, nomeAba, idItem, novosValor
     const indice = await encontrarIndiceDaLinha(token, idPlanilha, nomeAba, idItem);
     if (indice === -1) throw new Error("Item não encontrado na planilha.");
 
-    const numeroDaLinha = indice + 1; // Se o índice é 0, é a linha 1 do Excel
+    const numeroDaLinha = indice + 1; // Se o índice é 0, é a linha 1 do Sheets
     
-    // Fazemos um PUT diretamente no intervalo exato (Ex: Clientes!A5)
+    // Fazemos um PUT diretamente no intervalo exato com valueInputOption=RAW
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${idPlanilha}/values/${nomeAba}!A${numeroDaLinha}?valueInputOption=USER_ENTERED`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${idPlanilha}/values/${nomeAba}!A${numeroDaLinha}?valueInputOption=RAW`,
       {
         method: 'PUT',
         headers: {
@@ -132,6 +157,12 @@ export const editarLinha = async (token, idPlanilha, nomeAba, idItem, novosValor
         body: JSON.stringify({ values: [novosValores] })
       }
     );
+
+    if (!response.ok) {
+      console.error(`Erro na API ao editar linha em ${nomeAba}:`, await response.text());
+      return null;
+    }
+
     return await response.json();
   } catch (error) {
     console.error(`Erro ao editar linha em ${nomeAba}:`, error);
@@ -146,6 +177,7 @@ export const deletarLinha = async (token, idPlanilha, nomeAba, idItem) => {
     if (indice === -1) throw new Error("Item não encontrado na planilha.");
 
     const sheetId = await obterIdDaAbaNumerico(token, idPlanilha, nomeAba);
+    if (sheetId === null) throw new Error("Aba não encontrada na planilha.");
 
     // O comando batchUpdate com deleteDimension apaga a linha e "puxa" os dados de baixo para cima
     const response = await fetch(
@@ -172,6 +204,12 @@ export const deletarLinha = async (token, idPlanilha, nomeAba, idItem) => {
         })
       }
     );
+
+    if (!response.ok) {
+      console.error(`Erro na API ao deletar linha em ${nomeAba}:`, await response.text());
+      return null;
+    }
+
     return await response.json();
   } catch (error) {
     console.error(`Erro ao deletar linha em ${nomeAba}:`, error);
